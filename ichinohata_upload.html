@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一の旗 写真アップロード</title>
+<style>
+  :root{--ink:#1b2333;--indigo:#22304f;--vermilion:#c0392b;--cream:#f7f4ec;--line:#e3ddcf;--ok:#2e7d32;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;color:var(--ink);background:var(--cream);}
+  header{background:var(--indigo);color:#fff;padding:13px 20px;display:flex;align-items:center;gap:10px;}
+  header .mark{color:#f4b9ad;font-size:20px;}
+  header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.03em;}
+  header .accent{color:#f4b9ad;}
+  .wrap{max-width:680px;margin:0 auto;padding:22px 18px 60px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+  .step{font-size:12px;color:#9a927f;font-weight:700;letter-spacing:.08em;margin-bottom:8px;}
+  h2{font-size:15px;margin:0 0 12px;}
+  input[type=text],input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;}
+  .list{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:10px;}
+  .row{padding:9px 12px;border-bottom:1px solid #f0ece2;cursor:pointer;display:flex;align-items:center;gap:8px;}
+  .row:last-child{border-bottom:none;}
+  .row:hover{background:#f6f3ec;}
+  .row.sel{background:#eef3fb;}
+  .badge{font-size:10.5px;color:#fff;padding:1px 7px;border-radius:999px;flex:none;}
+  .badge.light{color:#1b2333;border:1px solid #2b2b2b;}
+  .row .nm{flex:1;font-size:13.5px;}
+  .row .pf{font-size:11px;color:#999;flex:none;}
+  .selbox{display:flex;gap:14px;align-items:center;margin-top:4px;}
+  .selbox .now{flex:1;}
+  .now .nm{font-size:16px;font-weight:700;}
+  .now .sub{font-size:12px;color:#777;}
+  .ph{width:104px;height:104px;border-radius:8px;border:1px solid var(--line);object-fit:cover;background:#f3f0e8;flex:none;}
+  .nophoto{width:104px;height:104px;border-radius:8px;border:1px dashed #cbc4b4;display:flex;align-items:center;justify-content:center;color:#b3ab98;font-size:11px;text-align:center;flex:none;}
+  .filebtn{display:inline-block;background:#eef0f5;border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer;font-size:14px;}
+  #file{display:none;}
+  #preview{max-width:100%;max-height:260px;border-radius:8px;margin-top:12px;display:none;}
+  .upbtn{width:100%;margin-top:14px;background:var(--vermilion);color:#fff;border:none;border-radius:9px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;}
+  .upbtn:disabled{background:#c9b4af;cursor:default;}
+  .status{margin-top:12px;font-size:13.5px;min-height:18px;}
+  .status.ok{color:var(--ok);font-weight:700;}
+  .status.err{color:var(--vermilion);}
+  .muted{font-size:11.5px;color:#9a927f;margin-top:6px;line-height:1.5;}
+  #overlay{position:fixed;inset:0;background:var(--indigo);display:flex;align-items:center;justify-content:center;z-index:50;}
+  #overlay .box{background:#fff;border-radius:12px;padding:26px;width:320px;text-align:center;}
+  #overlay h3{margin:0 0 14px;font-size:16px;}
+  #overlay button{margin-top:12px;width:100%;background:var(--indigo);color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;}
+  #passErr{color:var(--vermilion);font-size:12.5px;margin-top:8px;min-height:16px;}
+</style>
+</head>
+<body>
+<div id="overlay">
+  <div class="box">
+    <h3>一の旗 写真アップロード</h3>
+    <input type="password" id="passInput" placeholder="合言葉を入力" autocomplete="off">
+    <div id="passErr"></div>
+    <button id="passBtn">入る</button>
+  </div>
+</div>
+
+<header><span class="mark">&#9730;</span><h1>一の旗 <span class="accent">写真アップロード</span></h1></header>
+<div class="wrap">
+  <div class="card">
+    <div class="step">STEP 1</div>
+    <h2>お店を選ぶ</h2>
+    <input type="text" id="search" placeholder="店名・都道府県・会社名で検索（例：札幌、池袋本店）">
+    <div class="list" id="list"></div>
+  </div>
+
+  <div class="card" id="selCard" style="display:none;">
+    <div class="step">選択中のお店</div>
+    <div class="selbox">
+      <div class="now">
+        <span class="badge" id="selBadge"></span>
+        <div class="nm" id="selName"></div>
+        <div class="sub" id="selSub"></div>
+      </div>
+      <div id="phWrap"></div>
+    </div>
+  </div>
+
+  <div class="card" id="upCard" style="display:none;">
+    <div class="step">STEP 2</div>
+    <h2>写真を選んで、アップロード</h2>
+    <label class="filebtn" for="file">パソコンから写真を選ぶ</label>
+    <input type="file" id="file" accept="image/*">
+    <img id="preview" alt="">
+    <button class="upbtn" id="uploadBtn">この写真をアップロード</button>
+    <div class="status" id="status"></div>
+    <div class="muted">写真は自動で見やすいサイズに縮小して保存します。同じ店にもう一度上げると、新しい写真に置き換わります。</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://prldqlylkqrbwduybcpw.supabase.co';
+const SUPABASE_KEY='sb_publishable_YQFRvwddrR0_8Bgmn2EZ_g_zNOHZ74V';
+const BUCKET='store-photos';
+const UPLOAD_PASS='ichinohata';
+const STORES=[{"id": "s56e55c476", "group": "FS", "pref": "北海道", "name": "札幌白石店", "company": "(株)オートショップパートナー", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS004"}, {"id": "sde3c15e6d", "group": "FS", "pref": "青森県", "name": "青森店", "company": "モリピアみかみ", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS015"}, {"id": "sbc7e2960b", "group": "FS", "pref": "秋田県", "name": "湯沢店", "company": "佐々木ラジオ店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS021"}, {"id": "s2c725b95c", "group": "FS", "pref": "山形県", "name": "酒田店", "company": "サイクルぽーと", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS009"}, {"id": "sb747f6758", "group": "FS", "pref": "茨城県", "name": "鹿嶋店", "company": "有限会社高野電機", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS001"}, {"id": "sef436a9fd", "group": "FS", "pref": "群馬県", "name": "富岡店", "company": "写真のヤジマ", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS037"}, {"id": "s6d1de3916", "group": "FS", "pref": "埼玉県", "name": "行田店", "company": "餃子工房ヨコミゾ(株)", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS022"}, {"id": "s40e53efbe", "group": "FS", "pref": "埼玉県", "name": "鴻巣店", "company": "サイド商会吹上店", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS018"}, {"id": "sdc57a59c9", "group": "FS", "pref": "埼玉県", "name": "吉見店", "company": "アイテム１６（株）", "cat": "来店のみ", "raiten": "◯", "shutcho": "?", "code": "FS024"}, {"id": "sd42903838", "group": "FS", "pref": "埼玉県", "name": "鶴ヶ島店", "company": "ＢＯＵＮＣＥ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS003"}, {"id": "s5215d4f19", "group": "FS", "pref": "埼玉県", "name": "三郷店", "company": "（株）優信興業", "cat": "両方NG", "raiten": "?", "shutcho": "?", "code": "FS023"}, {"id": "s6e3c70086", "group": "FS", "pref": "千葉県", "name": "旭店", "company": "ミカドデンキ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS029"}, {"id": "sb048acad0", "group": "FS", "pref": "千葉県", "name": "千葉中央店", "company": "株式会社大竹商事", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS028"}, {"id": "scce01fd0a", "group": "FS", "pref": "東京都", "name": "武蔵村山店", "company": "自転車屋ＦＬＡＴ", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS008"}, {"id": "sf1e149b06", "group": "FS", "pref": "東京都", "name": "小平店", "company": "和田輪業", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS005"}, {"id": "s3e9ae6e47", "group": "FS", "pref": "東京都", "name": "杉並高井戸店", "company": "Barきまま（RTop高井戸駅前ビル4階）", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS035"}, {"id": "s0f22d5e6d", "group": "FS", "pref": "東京都", "name": "江戸川店", "company": "repos etwa", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS048"}, {"id": "s022cd2027", "group": "FS", "pref": "神奈川県", "name": "横須賀店", "company": "武山電化センター", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS002"}, {"id": "sfc58925d3", "group": "FS", "pref": "新潟県", "name": "新潟亀田店", "company": "高橋自転車店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS007"}, {"id": "s957ec13aa", "group": "FS", "pref": "新潟県", "name": "長岡十日町店", "company": "有限会社五井長", "cat": "来店のみ", "raiten": "?", "shutcho": "?", "code": "FS031"}, {"id": "see1049505", "group": "FS", "pref": "新潟県", "name": "長岡店", "company": "有限会社高橋電光社", "cat": "両方NG", "raiten": "×", "shutcho": "×", "code": "FS012"}, {"id": "s6771a08da", "group": "FS", "pref": "福井県", "name": "鯖江店", "company": "株式会社ミタムラ電機センター", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS016"}, {"id": "sf45484412", "group": "FS", "pref": "長野県", "name": "塩尻店", "company": "ノムラデンキ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS057"}, {"id": "sc13eb5ca4", "group": "FS", "pref": "福井県", "name": "越前店", "company": "北川テレビ商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS017"}, {"id": "s6aad1e3a8", "group": "FS", "pref": "岐阜県", "name": "岐阜飛騨店", "company": "エルックきょうしん", "cat": "来店のみ", "raiten": "◯", "shutcho": "?", "code": "FS052"}, {"id": "s83ea39ffb", "group": "FS", "pref": "岐阜県", "name": "関店", "company": "BESTAD合同会社", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS006"}, {"id": "s5fbf28ee9", "group": "FS", "pref": "愛知県", "name": "西尾店", "company": "鈴木自転車店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS054"}, {"id": "sb743d6cd3", "group": "FS", "pref": "愛知県", "name": "豊川店", "company": "有限会社ファーミイ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS049"}, {"id": "s108f13406", "group": "FS", "pref": "三重県", "name": "鈴鹿店", "company": "コバヤシデンキ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS047"}, {"id": "sfb20516d8", "group": "FS", "pref": "兵庫県", "name": "明石店", "company": "志互都人", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS025"}, {"id": "s9b2a2a31b", "group": "FS", "pref": "和歌山県", "name": "海南店", "company": "ヤスダカメラ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS034"}, {"id": "s3ac836a0a", "group": "FS", "pref": "鳥取県", "name": "倉吉店", "company": "リンリンサイクルたにもと", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS013"}, {"id": "s786e86fff", "group": "FS", "pref": "島根県", "name": "出雲店", "company": "日之出自転車商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS019"}, {"id": "sa130590e2", "group": "FS", "pref": "山口県", "name": "下関店", "company": "カーマッチ山口下関店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS042"}, {"id": "sdec8d7d0a", "group": "FS", "pref": "徳島県", "name": "徳島藍住店", "company": "みどり電機商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS020"}, {"id": "s354112cab", "group": "FS", "pref": "愛媛県", "name": "今治店", "company": "浅海設備工業（株）", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS040"}, {"id": "s658843e94", "group": "FS", "pref": "福岡県", "name": "北九州小倉南店", "company": "ライダーズカフェ BLACK MAGICIAN", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS038"}, {"id": "s57969a05f", "group": "FS", "pref": "福岡県", "name": "北九州門司店", "company": "いやしらぼ（プラザ祇園内）", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS055"}, {"id": "s6f0d44a9f", "group": "FS", "pref": "福岡県", "name": "北九州若松店", "company": "【仮】FS北九州若松店（福岡県北九州市若松区）", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS051"}, {"id": "sfa0c0ad49", "group": "FS", "pref": "福岡県", "name": "八幡西店", "company": "亀石工業", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS039"}, {"id": "sad7350671", "group": "FS", "pref": "福岡県", "name": "行橋店", "company": "株式会社サニタリーワン", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS043"}, {"id": "s61cabe1a2", "group": "FS", "pref": "福岡県", "name": "須恵店", "company": "オーバーラップ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS041"}, {"id": "sca7912b87", "group": "FS", "pref": "福岡県", "name": "糸島店", "company": "弥生SAKURA", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS044"}, {"id": "s4035e0d8b", "group": "FS", "pref": "福岡県", "name": "直方店", "company": "窪田建機株式会社", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS046"}, {"id": "sff9922173", "group": "FS", "pref": "福岡県", "name": "岡垣店", "company": "平島塗装店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS045"}, {"id": "s760c9f513", "group": "FS", "pref": "福岡県", "name": "福岡博多店", "company": "博多チャリンコ倶楽部美野島店", "cat": "両方NG", "raiten": "×", "shutcho": "?", "code": "FS026"}, {"id": "sea18f95c2", "group": "FS", "pref": "福岡県", "name": "福岡城南店", "company": "自転車工房神宮", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS027"}, {"id": "s34a220b6b", "group": "FS", "pref": "福岡県", "name": "福岡南店", "company": "福岡イーデザイン", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS056"}, {"id": "s7e3762e22", "group": "FS", "pref": "佐賀県", "name": "伊万里店", "company": "TATHUミ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS036"}, {"id": "s8bb69f89b", "group": "FS", "pref": "佐賀県", "name": "鹿島店", "company": "車輪屋千々岩自転車商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS010"}, {"id": "sd29c3a143", "group": "FS", "pref": "佐賀県", "name": "嬉野店", "company": "宮﨑自転車商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS014"}, {"id": "s79e29e5a1", "group": "FS", "pref": "大分県", "name": "宇佐店", "company": "山本サイクル", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS032"}, {"id": "sd31c5f57a", "group": "FS", "pref": "沖縄県", "name": "沖縄店", "company": "サブナード", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS058"}, {"id": "sb2d06325b", "group": "FS", "pref": "沖縄県", "name": "うるま店", "company": "La Neige", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS050"}, {"id": "sf381cc0d7", "group": "RM", "pref": "北海道", "name": "札幌店", "company": "", "cat": "ショップ"}, {"id": "sbc6cae072", "group": "RM", "pref": "北海道", "name": "旭川8条7丁目店", "company": "", "cat": "ショップ"}, {"id": "s45b39596b", "group": "RM", "pref": "岩手県", "name": "岩手盛岡店", "company": "", "cat": "ショップ"}, {"id": "s7883194c2", "group": "RM", "pref": "宮城県", "name": "仙台店", "company": "", "cat": "支店"}, {"id": "s67fbb59ec", "group": "RM", "pref": "秋田県", "name": "秋田店", "company": "", "cat": "ショップ"}, {"id": "s6d0fb8c5c", "group": "RM", "pref": "福島県", "name": "福島郡山店", "company": "", "cat": "ショップ"}, {"id": "sb4a675d6e", "group": "RM", "pref": "茨城県", "name": "水戸店", "company": "", "cat": "ショップ"}, {"id": "s64aa2e9c2", "group": "RM", "pref": "栃木県", "name": "宇都宮店", "company": "", "cat": "ショップ"}, {"id": "saa1f6fff8", "group": "RM", "pref": "埼玉県", "name": "岩槻店", "company": "", "cat": "支店"}, {"id": "se33177532", "group": "RM", "pref": "埼玉県", "name": "川口店", "company": "", "cat": "ショップ"}, {"id": "s37d59d7fd", "group": "RM", "pref": "埼玉県", "name": "所沢店", "company": "", "cat": "支店"}, {"id": "s6b5215b7c", "group": "RM", "pref": "千葉県", "name": "松戸店", "company": "", "cat": "ショップ"}, {"id": "s32388a793", "group": "RM", "pref": "東京都", "name": "秋葉原駅前店", "company": "", "cat": "支店"}, {"id": "s3761ab1f1", "group": "RM", "pref": "東京都", "name": "新宿本店", "company": "", "cat": "ショップ"}, {"id": "s0aa9d2c5d", "group": "RM", "pref": "東京都", "name": "品川店", "company": "", "cat": "ショップ"}, {"id": "s271eb1ca2", "group": "RM", "pref": "東京都", "name": "世田谷店｜千歳船橋駅前", "company": "", "cat": "ショップ"}, {"id": "saca354da3", "group": "RM", "pref": "東京都", "name": "渋谷店", "company": "", "cat": "ショップ"}, {"id": "s39da9c9c4", "group": "RM", "pref": "東京都", "name": "渋谷道玄坂店", "company": "", "cat": "ショップ"}, {"id": "s8b6d699ca", "group": "RM", "pref": "東京都", "name": "池袋本店", "company": "", "cat": "本社"}, {"id": "se999fa890", "group": "RM", "pref": "東京都", "name": "大塚店", "company": "", "cat": "支店"}, {"id": "s13c2f62f6", "group": "RM", "pref": "東京都", "name": "板橋店", "company": "", "cat": "ショップ"}, {"id": "s23c20fe53", "group": "RM", "pref": "東京都", "name": "西八王子店", "company": "", "cat": "支店"}, {"id": "s209e4cdbe", "group": "RM", "pref": "神奈川県", "name": "横浜店", "company": "", "cat": "支店"}, {"id": "s6248dff12", "group": "RM", "pref": "富山県", "name": "富山店", "company": "", "cat": "ショップ"}, {"id": "sd01d22ee1", "group": "RM", "pref": "石川県", "name": "金沢店", "company": "", "cat": "ショップ"}, {"id": "sf2bc46564", "group": "RM", "pref": "山梨県", "name": "山梨甲府店", "company": "", "cat": "ショップ"}, {"id": "sa603bc81c", "group": "RM", "pref": "長野県", "name": "長野店", "company": "", "cat": "ショップ"}, {"id": "s69f21c887", "group": "RM", "pref": "岐阜県", "name": "岐阜店", "company": "", "cat": "ショップ"}, {"id": "sb91d49c46", "group": "RM", "pref": "静岡県", "name": "静岡店", "company": "", "cat": "ショップ"}, {"id": "s6aed0025f", "group": "RM", "pref": "愛知県", "name": "名古屋店", "company": "", "cat": "支店"}, {"id": "s7a415e72e", "group": "RM", "pref": "三重県", "name": "四日市店", "company": "", "cat": "ショップ"}, {"id": "s82741c594", "group": "RM", "pref": "京都府", "name": "京都店", "company": "", "cat": "支店"}, {"id": "s3ecc85c52", "group": "RM", "pref": "大阪府", "name": "吹田店", "company": "", "cat": "ショップ"}, {"id": "s6fe361a28", "group": "RM", "pref": "兵庫県", "name": "三宮店", "company": "", "cat": "ショップ"}, {"id": "sf613fbb07", "group": "RM", "pref": "岡山県", "name": "岡山店", "company": "", "cat": "支店"}, {"id": "s2e6fb7798", "group": "RM", "pref": "広島県", "name": "広島店", "company": "", "cat": "支店"}, {"id": "s6952b71ec", "group": "RM", "pref": "香川県", "name": "高松店", "company": "", "cat": "ショップ"}, {"id": "s68dc3166b", "group": "RM", "pref": "愛媛県", "name": "松山店", "company": "", "cat": "ショップ"}, {"id": "s3289045d3", "group": "RM", "pref": "高知県", "name": "高知店", "company": "", "cat": "ショップ"}, {"id": "s268eacfca", "group": "RM", "pref": "熊本県", "name": "熊本店", "company": "", "cat": "支店"}, {"id": "sb01d3fd6f", "group": "RM", "pref": "鹿児島", "name": "鹿児島店", "company": "", "cat": "ショップ"}];
+const CATCOLOR={'本社':'#6b3fa0','支店':'#1f3a6e','ショップ':'#2e7d32','両方OK':'#1565c0','来店のみ':'#f4b400','両方NG':'#c62828','取引合意':'#ffffff'};
+let sb=null, selected=null;
+function esc(t){return (t||'').replace(/[&<>]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]);});}
+function pubUrl(id,bust){return SUPABASE_URL+'/storage/v1/object/public/'+BUCKET+'/'+id+'.jpg'+(bust?('?t='+Date.now()):'');}
+
+document.getElementById('passBtn').addEventListener('click',tryPass);
+document.getElementById('passInput').addEventListener('keydown',function(e){if(e.key==='Enter')tryPass();});
+function tryPass(){
+  if(document.getElementById('passInput').value===UPLOAD_PASS){
+    document.getElementById('overlay').style.display='none'; initApp();
+  } else { document.getElementById('passErr').textContent='合言葉が違います'; }
+}
+function initApp(){
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  renderList('');
+  document.getElementById('search').addEventListener('input',function(e){renderList(e.target.value);});
+  document.getElementById('file').addEventListener('change',onFile);
+  document.getElementById('uploadBtn').addEventListener('click',doUpload);
+}
+function renderList(q){
+  q=(q||'').trim();
+  var arr=STORES.filter(function(s){return !q || (s.name+s.pref+(s.company||'')).indexOf(q)>=0;});
+  arr.sort(function(a,b){return (a.pref+a.name).localeCompare(b.pref+b.name,'ja');});
+  var html=arr.slice(0,300).map(function(s){
+    var c=CATCOLOR[s.cat]||'#888'; var light=(s.cat==='取引合意');
+    return '<div class="row'+(selected&&selected.id===s.id?' sel':'')+'" data-id="'+s.id+'">'
+      +'<span class="badge '+(light?'light':'')+'" style="background:'+c+'">'+esc(s.cat)+'</span>'
+      +'<span class="nm">'+esc(s.name)+'</span><span class="pf">'+esc(s.pref)+'</span></div>';
+  }).join('');
+  if(!arr.length) html='<div class="row" style="color:#999;cursor:default;">該当なし</div>';
+  var el=document.getElementById('list'); el.innerHTML=html;
+  el.querySelectorAll('.row[data-id]').forEach(function(r){r.addEventListener('click',function(){selectStore(r.dataset.id);});});
+}
+function selectStore(id){
+  selected=STORES.find(function(s){return s.id===id;}); if(!selected) return;
+  renderList(document.getElementById('search').value);
+  var c=CATCOLOR[selected.cat]||'#888'; var light=(selected.cat==='取引合意');
+  document.getElementById('selCard').style.display='';
+  document.getElementById('upCard').style.display='';
+  var b=document.getElementById('selBadge'); b.textContent=selected.cat; b.style.background=c;
+  b.className='badge'+(light?' light':'');
+  document.getElementById('selName').textContent=selected.name;
+  document.getElementById('selSub').textContent=selected.pref+(selected.company?('　'+selected.company):'');
+  var wrap=document.getElementById('phWrap');
+  wrap.innerHTML='<img class="ph" id="curPhoto" alt="">';
+  var img=document.getElementById('curPhoto');
+  img.onerror=function(){wrap.innerHTML='<div class="nophoto">まだ写真<br>なし</div>';};
+  img.src=pubUrl(selected.id,true);
+  document.getElementById('status').textContent='';
+  document.getElementById('status').className='status';
+  document.getElementById('preview').style.display='none';
+  document.getElementById('file').value='';
+}
+function onFile(e){
+  var f=e.target.files[0]; var p=document.getElementById('preview');
+  if(f){ p.src=URL.createObjectURL(f); p.style.display='block'; } else { p.style.display='none'; }
+}
+function resizeImage(file,maxDim,quality){
+  return new Promise(function(resolve){
+    var img=new Image();
+    img.onload=function(){
+      var w=img.width,h=img.height;
+      if(Math.max(w,h)>maxDim){var r=maxDim/Math.max(w,h);w=Math.round(w*r);h=Math.round(h*r);}
+      var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      cv.toBlob(function(b){resolve(b||file);},'image/jpeg',quality);
+    };
+    img.onerror=function(){resolve(file);};
+    img.src=URL.createObjectURL(file);
+  });
+}
+function setStatus(msg,kind){var s=document.getElementById('status');s.textContent=msg;s.className='status'+(kind?(' '+kind):'');}
+async function doUpload(){
+  if(!selected){setStatus('先にお店を選んでください','err');return;}
+  var f=document.getElementById('file').files[0];
+  if(!f){setStatus('写真を選んでください','err');return;}
+  var btn=document.getElementById('uploadBtn'); btn.disabled=true; setStatus('アップロード中…','');
+  try{
+    var blob=await resizeImage(f,1600,0.85);
+    var res=await sb.storage.from(BUCKET).upload(selected.id+'.jpg',blob,{upsert:true,contentType:'image/jpeg'});
+    if(res.error){ setStatus('失敗：'+res.error.message,'err'); btn.disabled=false; return; }
+    setStatus('アップロード成功！「'+selected.name+'」に写真を保存しました。','ok');
+    var wrap=document.getElementById('phWrap'); wrap.innerHTML='<img class="ph" alt="">';
+    wrap.firstChild.src=pubUrl(selected.id,true);
+    document.getElementById('file').value=''; document.getElementById('preview').style.display='none';
+  }catch(err){ setStatus('エラー：'+(err&&err.message?err.message:err),'err'); }
+  btn.disabled=false;
+}
+</script>
+</body>
+</html>
