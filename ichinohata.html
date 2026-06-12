@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一の旗計画 アウトバウンド架電</title>
+<style>
+  :root{
+    --bg:#eef1f5; --surface:#ffffff; --ink:#1f2933; --ink-soft:#5b6671;
+    --line:#dfe4ea; --accent:#0b7a8c; --accent-dark:#086374; --accent-soft:#e3f1f3;
+    --flag:#c92a2a; --flag-soft:#fff0f0;
+    --shadow:0 1px 3px rgba(31,41,51,.08), 0 4px 16px rgba(31,41,51,.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  html{overflow-y:scroll;}
+  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.6; -webkit-font-smoothing:antialiased;}
+  header{background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:50;}
+  .header-inner{max-width:1100px; margin:0 auto; padding:12px 20px;}
+  .top-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .logo{display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px;}
+  .logo .dot{width:30px; height:30px; border-radius:9px; background:var(--accent); display:grid; place-items:center; color:#fff; font-size:16px;}
+  nav{display:flex; gap:4px; margin-left:auto; flex-wrap:wrap;}
+  .tab{border:none; background:transparent; cursor:pointer; padding:9px 16px; border-radius:9px; font-size:14px; font-weight:600; color:var(--ink-soft); font-family:inherit;}
+  .tab:hover{background:var(--bg);}
+  .tab.active{background:var(--accent); color:#fff;}
+  .stats{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;}
+  .stat{background:var(--bg); border-radius:10px; padding:8px 14px; min-width:100px;}
+  .stat .label{font-size:11px; color:var(--ink-soft); font-weight:600;}
+  .stat .num{font-size:22px; font-weight:700;}
+  .stat.flag{background:var(--flag-soft);}
+  .stat.flag .num{color:var(--flag);}
+  main{max-width:1100px; margin:0 auto; padding:22px 20px 90px;}
+  .page{display:none;} .page.active{display:block;}
+  h2.section-title{font-size:19px; margin:0 0 4px;}
+  .section-sub{color:var(--ink-soft); font-size:13px; margin:0 0 18px;}
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
+  input,select,textarea{font-family:inherit; font-size:14px; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:9px 12px; background:#fff;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft); border-color:var(--accent);}
+  .search{flex:1; min-width:200px;}
+  .btn{border:none; cursor:pointer; font-family:inherit; font-size:14px; font-weight:600; padding:9px 16px; border-radius:9px; background:var(--accent); color:#fff;}
+  .btn:hover{background:var(--accent-dark);}
+  .btn.ghost{background:#fff; color:var(--ink); border:1px solid var(--line);}
+  .btn.ghost:hover{background:var(--bg);}
+  .btn.danger{background:#fff; color:#c92a2a; border:1px solid #ffc9c9;}
+  .btn.danger:hover{background:#fff5f5;}
+  .btn.sm{padding:6px 12px; font-size:13px;}
+  .table-wrap{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow-x:auto; box-shadow:var(--shadow); margin-bottom:6px;}
+  table{width:100%; border-collapse:collapse; min-width:560px;}
+  th,td{padding:12px 14px; text-align:left; font-size:14px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  th{background:#f6f8fa; font-size:12px; color:var(--ink-soft); font-weight:700;}
+  tbody tr.clickable{cursor:pointer;}
+  tbody tr.clickable:hover{background:var(--accent-soft);}
+  tbody tr:last-child td{border-bottom:none;}
+  .empty{padding:48px 20px; text-align:center; color:var(--ink-soft);}
+  .empty .big{font-size:34px; margin-bottom:8px;}
+  .badge{display:inline-block; padding:3px 10px; border-radius:99px; font-size:12px; font-weight:700; color:#fff; white-space:nowrap;}
+  .badge[data-s="未接触"]{background:#ef2b2b; color:#fff;}
+  .badge[data-s="接触中"]{background:#d4e3f2; color:#1f2933;}
+  .badge[data-s="商談中"]{background:#14aee8; color:#fff;}
+  .badge[data-s="取引合意"]{background:#ffb000; color:#4a3500;}
+  .badge[data-s="書類準備中"]{background:#cde9b8; color:#2a3a1e;}
+  .badge[data-s="締結"]{background:#8fcf4e; color:#20340f;}
+  .badge[data-s="新設届出中"]{background:#fcd5b4; color:#5a3b1e;}
+  .badge[data-s="新店オープン"]{background:#ffe600; color:#4a4300;}
+  .badge[data-s="未締結"]{background:#9aa0a6; color:#fff;}
+  .due{color:#c92a2a; font-weight:700;}
+  .icon-btn{border:1px solid var(--line); background:#fff; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:13px; font-family:inherit; color:var(--ink); text-decoration:none; display:inline-block;}
+  .icon-btn:hover{background:var(--bg);}
+  .call-link{color:var(--accent-dark); font-weight:700; text-decoration:none;}
+  .call-link:hover{text-decoration:underline;}
+  .overlay{position:fixed; inset:0; background:rgba(31,41,51,.45); display:none; align-items:flex-start; justify-content:center; z-index:100; padding:24px 16px; overflow-y:auto;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--surface); border-radius:16px; width:100%; max-width:600px; box-shadow:0 12px 40px rgba(31,41,51,.25);}
+  .modal-head{padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;}
+  .modal-head h3{margin:0; font-size:17px;}
+  .modal-head .x{border:none; background:transparent; font-size:24px; cursor:pointer; color:var(--ink-soft); line-height:1;}
+  .modal-body{padding:22px;}
+  .field{margin-bottom:13px;}
+  .field label{display:block; font-size:13px; font-weight:600; margin-bottom:5px;}
+  .field input,.field select,.field textarea{width:100%;}
+  .field textarea{resize:vertical; min-height:58px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;}
+  .modal-foot{padding:16px 22px; border-top:1px solid var(--line); display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;}
+  .result-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:4px;}
+  .result-btn{border:2px solid var(--line); background:#fff; border-radius:10px; padding:10px 6px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; color:var(--ink);}
+  .result-btn:hover{border-color:var(--accent);}
+  .result-btn.selected{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .call-actions{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;}
+  .big-call{background:var(--accent); color:#fff; padding:12px 18px; border-radius:10px; text-decoration:none; font-weight:700; font-size:16px;}
+  .big-call:hover{background:var(--accent-dark);}
+  .history{margin-top:8px; border-top:1px solid var(--line); padding-top:14px;}
+  .history h4{margin:0 0 10px; font-size:14px;}
+  .hist-item{display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px;}
+  .hist-item:last-child{border-bottom:none;}
+  .hist-date{color:var(--ink-soft); white-space:nowrap;}
+  .hint{font-size:12px; color:var(--ink-soft); margin-top:6px;}
+  .def-hint{font-size:12px; color:var(--ink-soft); margin-top:6px; background:var(--bg); border-radius:8px; padding:8px 10px;}
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:var(--shadow); margin-bottom:18px;}
+  .panel h3{margin:0 0 10px; font-size:15px;}
+  .sub-block{background:#f8fafb; border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:13px;}
+  .sub-block .blk-title{font-size:13px; font-weight:700; margin-bottom:10px;}
+  .checkbox-field{display:flex; align-items:center; gap:8px; padding:9px 0;}
+  .checkbox-field input{width:18px; height:18px;}
+  .checkbox-field label{margin:0; font-size:14px; font-weight:600;}
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff; padding:12px 22px; border-radius:99px; font-size:14px; font-weight:600; opacity:0; pointer-events:none; transition:.25s; z-index:200;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .toast.err{background:#c92a2a;}
+  #conn-error{display:none; background:#fff0f0; border:1px solid #ffc9c9; color:#a61e1e; border-radius:12px; padding:14px 18px; margin-bottom:18px; font-size:13px;}
+  #loading{text-align:center; color:var(--ink-soft); padding:30px;}
+  .sub-head{font-weight:700; font-size:14px; margin:18px 0 8px; display:flex; align-items:center; gap:8px;}
+  .rank-no{font-weight:700; color:var(--accent-dark);}
+  .type-badge{display:inline-block; border-radius:6px; padding:1px 8px; font-size:11px; font-weight:700;}
+  .type-send{background:#e7f5ff; color:#1971c2;}
+  .type-full{background:#fff4e6; color:#e8590c;}
+  .yamato-link{color:#e8590c; font-weight:700; text-decoration:none;}
+  .yamato-link:hover{text-decoration:underline;}
+  .tier-row{display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin-bottom:8px; align-items:center;}
+  .camp-card{border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; background:var(--surface); box-shadow:var(--shadow);}
+  .camp-card h4{margin:0 0 4px; font-size:16px;}
+  .camp-meta{font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
+  .pill{display:inline-block; background:var(--accent-soft); color:var(--accent-dark); border-radius:99px; padding:2px 10px; font-size:12px; font-weight:700; margin-right:6px;}
+  .reward{color:#2b8a3e; font-weight:700;}
+  @media(max-width:560px){ .row2,.row3{grid-template-columns:1fr;} .result-grid{grid-template-columns:1fr 1fr;} }
+  /* ===== ログイン画面 ===== */
+  #login-overlay{position:fixed; inset:0; background:linear-gradient(160deg,#0b7a8c,#086374); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;}
+  #login-overlay.hidden{display:none;}
+  .login-card{background:#fff; border-radius:16px; padding:30px 28px; width:340px; max-width:100%; box-shadow:0 12px 44px rgba(0,0,0,.28);}
+  .login-logo{display:flex; align-items:center; gap:10px; font-weight:700; font-size:20px;}
+  .login-logo .dot{width:34px; height:34px; border-radius:10px; background:var(--accent); display:grid; place-items:center; color:#fff; font-size:18px;}
+  .login-sub{color:var(--ink-soft); font-size:13px; margin:6px 0 18px;}
+  .login-label{display:block; font-size:12px; color:var(--ink-soft); font-weight:600; margin:12px 0 4px;}
+  #login-overlay input{width:100%;}
+  .login-btn{width:100%; margin-top:20px; padding:11px; font-size:15px;}
+  .login-error{color:#c92a2a; font-size:13px; margin-top:10px; min-height:18px;}
+</style>
+</head>
+<body>
+
+<!-- ===== ログイン画面（ログインしないと中身は使えません） ===== -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo"><span class="dot">🎌</span> 一の旗計画</div>
+    <p class="login-sub">アウトバウンド架電 管理ログイン</p>
+    <label class="login-label">メールアドレス</label>
+    <input id="login-email" type="email" autocomplete="username" placeholder="staff@example.com">
+    <label class="login-label">パスワード</label>
+    <input id="login-pass" type="password" autocomplete="current-password" placeholder="パスワード">
+    <button class="btn login-btn" id="login-btn">ログイン</button>
+    <div id="login-error" class="login-error"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <div class="top-row">
+      <div class="logo"><span class="dot">🎌</span>一の旗計画 ／ アウトバウンド架電</div>
+      <nav>
+        <button class="tab active" data-tab="call">📞 架電リスト</button>
+        <button class="tab" data-tab="perf">🏆 成績</button>
+        <button class="tab" data-tab="campaign">🎯 キャンペーン</button>
+        <button class="tab" data-tab="data">💾 データ管理</button>
+      </nav>
+      <button class="btn ghost" id="logout-btn" style="margin-left:8px;">ログアウト</button>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<main>
+  <div id="conn-error"></div>
+
+  <!-- ===== 架電リスト ===== -->
+  <section class="page active" id="page-call">
+    <h2 class="section-title">架電リスト</h2>
+    <p class="section-sub">行をクリックすると架電の記録ができます。📞で発信、🗺で地図、🚚で荷物追跡が開きます。</p>
+    <div class="toolbar">
+      <input class="search" id="search" type="text" placeholder="🔍 会社名・地域・業種で検索（スペースで複数語）">
+      <select id="filter-category">
+        <option value="">すべての業種</option>
+      </select>
+      <select id="filter">
+        <option value="">すべての状況</option>
+      </select>
+      <button class="btn" id="add-btn">＋ 見込み先を追加</button>
+    </div>
+    <div id="loading">読み込み中…</div>
+    <div class="table-wrap" id="table-wrap" style="display:none;">
+      <table>
+        <thead><tr><th>業種</th><th>会社名</th><th>地域</th><th>電話番号</th><th>状況</th><th>次回予定</th><th>操作</th></tr></thead>
+        <tbody id="list-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 成績 ===== -->
+  <section class="page" id="page-perf">
+    <h2 class="section-title">成績</h2>
+    <p class="section-sub">アポさんを「送付型／一気通貫型」で登録すると、それぞれの成績が出ます。送付型＝送付状を出した数、一気通貫型＝締結した数。</p>
+    <div class="toolbar">
+      <label style="font-size:13px; font-weight:600;">期間：</label>
+      <select id="perf-period">
+        <option value="month">今月</option>
+        <option value="lastmonth">先月</option>
+        <option value="today">今日</option>
+        <option value="all">全期間</option>
+      </select>
+    </div>
+    <div class="sub-head">📨 送付型ランキング（送付状を出した数）</div>
+    <div class="table-wrap"><table><thead><tr><th>順位</th><th>アポさん</th><th>送付数</th></tr></thead><tbody id="perf-send"></tbody></table></div>
+    <div class="sub-head">🤝 一気通貫型ランキング（締結した数）</div>
+    <div class="table-wrap"><table><thead><tr><th>順位</th><th>アポさん</th><th>締結数</th></tr></thead><tbody id="perf-full"></tbody></table></div>
+
+    <div class="panel" style="margin-top:22px;">
+      <h3>👥 アポさんの登録</h3>
+      <p class="hint" style="margin-top:0;">名前を入れてタイプを選び「追加」を押してください。架電や編集の「送付担当／締結担当」で選べるようになります。</p>
+      <div class="toolbar">
+        <input id="staff-name" type="text" placeholder="例）佐藤" style="min-width:160px;">
+        <select id="staff-type"><option>送付型</option><option>一気通貫型</option></select>
+        <button class="btn" id="staff-add">追加</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>アポさん</th><th>タイプ</th><th></th></tr></thead><tbody id="staff-body"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ===== キャンペーン ===== -->
+  <section class="page" id="page-campaign">
+    <h2 class="section-title">キャンペーン</h2>
+    <p class="section-sub">期間と目標（送付数／締結数）、ごほうび（段階OK）を決めて作れます。進み具合・ごほうび・ランキングが出ます。</p>
+    <button class="btn" id="camp-new-btn">＋ キャンペーンを作る</button>
+    <div id="camp-list" style="margin-top:18px;"></div>
+  </section>
+
+  <!-- ===== データ管理 ===== -->
+  <section class="page" id="page-data">
+    <h2 class="section-title">データ管理</h2>
+    <p class="section-sub">名簿の取り込みや、データの保存（バックアップ）ができます。</p>
+    <div class="panel">
+      <h3>📥 名簿（CSV）を取り込む</h3>
+      <p class="hint" style="margin-top:0;">エクセルで作った名簿を取り込めます。1行目（見出し）はこの順番にしてください：<br>
+      <b>会社名, 都道府県, 市区町村, 住所, 業種, 電話番号, 窓口担当, 担当者, メモ</b><br>
+      （住所まで入れておくと、🗺ボタンで正確に地図が開きます。）</p>
+      <input type="file" id="csv-input" accept=".csv">
+    </div>
+    <div class="panel">
+      <h3>📤 データを保存する（バックアップ）</h3>
+      <p class="hint" style="margin-top:0;">今のデータをCSVファイルとしてダウンロードします。</p>
+      <button class="btn ghost" id="export-btn">CSVでダウンロード</button>
+    </div>
+    <div class="panel">
+      <h3>🧪 お試しデータ</h3>
+      <p class="hint" style="margin-top:0;">使い方を試したいとき用。3件のサンプルを追加します。</p>
+      <button class="btn ghost" id="sample-btn">サンプルを入れてみる</button>
+    </div>
+  </section>
+</main>
+
+<!-- ===== 追加/編集モーダル ===== -->
+<div class="overlay" id="edit-overlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="edit-title">見込み先を追加</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>会社名（業者名）</label><input type="text" id="f-company" placeholder="例）株式会社サンプル商会"></div>
+      <div class="row3">
+        <div class="field"><label>都道府県</label><input type="text" id="f-prefecture" placeholder="例）東京都"></div>
+        <div class="field"><label>市区町村</label><input type="text" id="f-city" placeholder="例）新宿区"></div>
+        <div class="field"><label>業種・取扱</label><input type="text" id="f-category" placeholder="例）リサイクル"></div>
+      </div>
+      <div class="field"><label>住所（地図で使います）</label><input type="text" id="f-address" placeholder="例）東京都新宿区西新宿2-8-1"></div>
+      <div class="row2">
+        <div class="field"><label>電話番号</label><input type="text" id="f-phone" placeholder="例）03-1234-5678"></div>
+        <div class="field"><label>FAX番号</label><input type="text" id="f-faxnum" placeholder="例）03-1234-5679"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>事業者担当者</label><input type="text" id="f-contact" placeholder="例）山田 様"></div>
+        <div class="field"><label>担当者の携帯番号</label><input type="text" id="f-mobile" placeholder="例）090-1234-5678"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>メールアドレス</label><input type="text" id="f-email" placeholder="例）info@example.co.jp"></div>
+        <div class="checkbox-field"><input type="checkbox" id="f-fax"><label for="f-fax">必要書類をFAX（メール）済み</label></div>
+      </div>
+      <div class="row3">
+        <div class="field"><label>状況</label><select id="f-status"></select></div>
+        <div class="field"><label>開拓手段</label>
+          <select id="f-source">
+            <option>アウトバウンド</option><option>紹介</option><option>飛び込み</option>
+            <option>既存取引先の紹介</option><option>縁故（家族・友人）</option>
+          </select>
+        </div>
+        <div class="field"><label>担当者（架電）</label><input type="text" id="f-staff" placeholder="例）佐藤"></div>
+      </div>
+      <div class="field"><label>紹介元（あれば）</label><input type="text" id="f-referrer" placeholder="例）〇〇商店さんの紹介"></div>
+
+      <div class="sub-block">
+        <div class="blk-title">📨 送付（送付状を出した記録）</div>
+        <div class="row3">
+          <div class="field"><label>送付担当</label><select id="f-sendstaff"></select></div>
+          <div class="field"><label>発送日</label><input type="date" id="f-senddate"></div>
+          <div class="field"><label>追跡番号（ヤマト）</label><input type="text" id="f-tracking" placeholder="例）1234-5678-9012"></div>
+        </div>
+        <div id="f-tracking-link" style="font-size:13px;"></div>
+      </div>
+
+      <div class="sub-block">
+        <div class="blk-title">🤝 締結・旗・オープン</div>
+        <div class="row2">
+          <div class="field"><label>締結担当</label><select id="f-contractstaff"></select></div>
+          <div class="field"><label>締結日</label><input type="date" id="f-contractdate"></div>
+        </div>
+        <div class="row3">
+          <div class="field"><label>次回架電予定</label><input type="date" id="f-next"></div>
+          <div class="field"><label>旗の日（新設届出中）</label><input type="date" id="f-flag"></div>
+          <div class="field"><label>新店オープン日</label><input type="date" id="f-open"></div>
+        </div>
+      </div>
+
+      <div class="field"><label>メモ</label><textarea id="f-memo"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger" id="delete-btn" style="margin-right:auto; display:none;">削除</button>
+      <button class="btn ghost" data-close>キャンセル</button>
+      <button class="btn" id="save-btn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 架電モーダル ===== -->
+<div class="overlay" id="call-overlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="call-title">架電の記録</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <div class="call-actions">
+        <a id="call-dial" class="big-call" href="#">📞 発信する</a>
+        <button class="btn ghost" id="call-map" type="button">🗺 地図で見る</button>
+        <button class="btn ghost" id="call-edit" type="button">✏️ 情報を編集</button>
+      </div>
+      <div class="field">
+        <label>架電の結果</label>
+        <div class="result-grid" id="result-grid"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>状況を更新</label><select id="call-status"></select></div>
+        <div class="field"><label>次回架電予定</label><input type="date" id="call-next"></div>
+      </div>
+      <div class="def-hint" id="call-status-def"></div>
+
+      <div class="sub-block" id="call-send-block" style="display:none;">
+        <div class="blk-title">📨 送付情報（アポ獲得→資料を送ったら）</div>
+        <div class="row3">
+          <div class="field"><label>送付担当</label><select id="call-sendstaff"></select></div>
+          <div class="field"><label>発送日</label><input type="date" id="call-senddate"></div>
+          <div class="field"><label>追跡番号（ヤマト）</label><input type="text" id="call-tracking" placeholder="例）1234-5678-9012"></div>
+        </div>
+      </div>
+
+      <div class="sub-block" id="call-contract-block" style="display:none;">
+        <div class="blk-title">🤝 締結情報</div>
+        <div class="row2">
+          <div class="field"><label>締結担当</label><select id="call-contractstaff"></select></div>
+          <div class="field"><label>締結日</label><input type="date" id="call-contractdate"></div>
+        </div>
+      </div>
+
+      <div class="field"><label>通話メモ</label><textarea id="call-note" placeholder="話した内容、次の約束など"></textarea></div>
+      <div class="history" id="call-history"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-close>閉じる</button>
+      <button class="btn" id="call-save-btn">記録して保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== キャンペーン作成モーダル ===== -->
+<div class="overlay" id="camp-overlay">
+  <div class="modal">
+    <div class="modal-head"><h3>キャンペーンを作る</h3><button class="x" data-close-camp>×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>キャンペーン名</label><input id="camp-name" placeholder="例）今月の送付チャレンジ"></div>
+      <div class="row2">
+        <div class="field"><label>目標の数字</label><select id="camp-metric"><option>送付数</option><option>締結数</option></select></div>
+        <div class="field"><label>対象</label><div class="hint" style="margin:0;">送付数＝送付型／締結数＝一気通貫型が対象になります</div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>開始日</label><input type="date" id="camp-start"></div>
+        <div class="field"><label>終了日</label><input type="date" id="camp-end"></div>
+      </div>
+      <div class="field">
+        <label>ごほうび（段階）</label>
+        <p class="hint" style="margin-top:0;">「○件で△円」を入れます。1段だけなら一律、複数入れると段階式です（例：4件→1000円、8件→2500円）。</p>
+        <div id="camp-tiers"></div>
+        <button class="btn ghost sm" id="camp-add-tier" type="button">＋ 段階を追加</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-close-camp>キャンセル</button>
+      <button class="btn" id="camp-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Supabase（データベース）に接続するための部品を読み込みます -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =========================================================
+   ① 接続情報（あなたのmononoki-systemにつなぎます）
+   ========================================================= */
+const SUPABASE_URL = "https://prldqlylkqrbwduybcpw.supabase.co";
+const SUPABASE_KEY = "sb_publishable_YQFRvwddrR0_8Bgmn2EZ_g_zNOHZ74V";
+const TABLE       = "ichinohata";            // 見込み先
+const STAFF_TABLE = "ichinohata_staff";      // アポさん
+const CAMP_TABLE  = "ichinohata_campaign";   // キャンペーン
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* 状況（社員版）とその定義 */
+const STATUSES = ["未接触","接触中","商談中","取引合意","書類準備中","締結","新設届出中","新店オープン","未締結"];
+const STATUS_DEF = {
+  "未接触":"資料送付後、まだ連絡していない",
+  "接触中":"資料到着後、電話でコンタクトした",
+  "商談中":"必要書類をFAX（メール）済み",
+  "取引合意":"事前情報のReFAXあり",
+  "書類準備中":"役所書類を準備中",
+  "締結":"契約・備品の持参日が確定（郵送なら返送日）",
+  "新設届出中":"旗設置済み・佐倉先生（行政書士）が対応中",
+  "新店オープン":"佐倉先生から買取可能日の連絡がきた",
+  "未締結":"途中で見込みなしになった"
+};
+/* 架電の結果（社員版） */
+const RESULTS = ["アポ獲得","再連絡（担当者不在）","コールのみ","興味なし","不通"];
+
+let prospects = [];
+let staffList = [];
+let campaigns = [];
+let currentId = null;
+let selectedResult = null;
+let editDirty = false, callDirty = false, campDirty = false;
+
+/* --- 便利関数 --- */
+function esc(s){ return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function nullIfEmpty(v){ return (v===""||v==null) ? null : v; }
+function yamatoUrl(no){ return "https://toi.kuronekoyamato.co.jp/cgi-bin/tneko?number00=1&number01="+encodeURIComponent(String(no).replace(/[^0-9]/g,"")); }
+function showToast(msg, isErr){
+  const t=document.getElementById("toast"); t.textContent=msg;
+  t.className = "toast show" + (isErr?" err":"");
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.className="toast",2200);
+}
+function showConnError(msg){
+  const e=document.getElementById("conn-error");
+  e.style.display="block";
+  e.innerHTML = "⚠️ データベースに接続できませんでした。<br>"+esc(msg)+"<br>（インターネット接続と、テーブル名が <b>ichinohata</b> になっているかを確認してください。）";
+}
+function staffOptionsHtml(selected){
+  return '<option value="">（未選択）</option>' + staffList.map(s=>`<option ${s.name===(selected||"")?"selected":""}>${esc(s.name)}</option>`).join("");
+}
+
+/* =========================================================
+   ② データの読み書き（Supabase）
+   ========================================================= */
+async function loadProspects(){
+  document.getElementById("loading").style.display="block";
+  const { data, error } = await sb.from(TABLE).select("*").order("created_at",{ascending:false});
+  document.getElementById("loading").style.display="none";
+  if(error){ showConnError(error.message); return; }
+  prospects = data || [];
+  document.getElementById("table-wrap").style.display="block";
+  render();
+}
+async function loadStaff(){
+  const { data, error } = await sb.from(STAFF_TABLE).select("*").order("created_at",{ascending:true});
+  if(error){ showToast("アポさんの読み込み失敗："+error.message, true); return; }
+  staffList = data || [];
+  renderStaff();
+}
+async function loadCampaigns(){
+  const { data, error } = await sb.from(CAMP_TABLE).select("*").order("created_at",{ascending:false});
+  if(error){ showToast("キャンペーンの読み込み失敗："+error.message, true); return; }
+  campaigns = data || [];
+  renderCampaigns();
+}
+async function insertProspect(payload){
+  const { error } = await sb.from(TABLE).insert(payload);
+  if(error){ showToast("保存に失敗："+error.message, true); return false; }
+  return true;
+}
+async function updateProspect(id, payload){
+  const { error } = await sb.from(TABLE).update(payload).eq("id", id);
+  if(error){ showToast("更新に失敗："+error.message, true); return false; }
+  return true;
+}
+async function removeProspect(id){
+  const { error } = await sb.from(TABLE).delete().eq("id", id);
+  if(error){ showToast("削除に失敗："+error.message, true); return false; }
+  return true;
+}
+
+/* =========================================================
+   ③ 画面の描画（架電リスト）
+   ========================================================= */
+function render(){ renderStats(); refreshStatusFilter(); refreshCategoryFilter(); renderList(); }
+
+function renderStats(){
+  const total = prospects.length;
+  const today = todayStr();
+  const month = today.slice(0,7);
+  const callsToday = prospects.reduce((n,p)=> n + (p.history||[]).filter(h=>(h.date||"").slice(0,10)===today).length, 0);
+  const flags = prospects.filter(p=> p.flag_date).length;
+  const flagsMonth = prospects.filter(p=> (p.flag_date||"").slice(0,7)===month).length;
+  const dealsMonth = prospects.filter(p=> (p.contract_date||"").slice(0,7)===month).length;
+  document.getElementById("stats").innerHTML = `
+    <div class="stat"><div class="label">見込み先</div><div class="num">${total}</div></div>
+    <div class="stat"><div class="label">今日の架電</div><div class="num">${callsToday}</div></div>
+    <div class="stat"><div class="label">締結（今月）</div><div class="num">${dealsMonth}</div></div>
+    <div class="stat flag"><div class="label">🎌 立った旗（累計）</div><div class="num">${flags}</div></div>
+    <div class="stat flag"><div class="label">🎌 今月の旗</div><div class="num">${flagsMonth}</div></div>
+  `;
+}
+function refreshStatusFilter(){
+  const sel=document.getElementById("filter"); const cur=sel.value;
+  sel.innerHTML='<option value="">すべての状況</option>'+STATUSES.map(s=>`<option value="${s}">${s}</option>`).join("");
+  sel.value=cur;
+}
+function rowHtml(p){
+  const region = [p.prefecture,p.city].filter(Boolean).join(" ") || "—";
+  const next = p.next_call ? (p.next_call<=todayStr()? `<span class="due">${p.next_call}</span>` : p.next_call) : "—";
+  const telnum = (p.phone||"").replace(/[^0-9+]/g,"");
+  return `<tr class="clickable" data-id="${p.id}">
+    <td>${esc(p.category)||"—"}</td>
+    <td><b>${esc(p.company)||"（会社名なし）"}</b></td>
+    <td>${esc(region)}</td>
+    <td>${p.phone? `<a class="call-link" href="tel:${telnum}" onclick="event.stopPropagation()">${esc(p.phone)}</a>` : "—"}</td>
+    <td><span class="badge" data-s="${esc(p.status)}">${esc(p.status)}</span></td>
+    <td>${next}</td>
+    <td onclick="event.stopPropagation()">
+      ${p.phone? `<a class="icon-btn" href="tel:${telnum}" title="発信">📞</a>`:""}
+      <button class="icon-btn" title="地図" onclick="openMap('${p.id}')">🗺</button>
+      ${p.tracking_no? `<a class="icon-btn" title="荷物を追跡" href="${yamatoUrl(p.tracking_no)}" target="_blank" rel="noopener">🚚</a>`:""}
+    </td>
+  </tr>`;
+}
+function bindRows(){
+  document.querySelectorAll("#list-body tr.clickable").forEach(tr=>{
+    tr.addEventListener("click",()=>openCall(tr.dataset.id));
+  });
+}
+function refreshCategoryFilter(){
+  const sel = document.getElementById("filter-category");
+  const current = sel.value;
+  const cats = [...new Set(prospects.map(p=>(p.category||"").trim()).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">すべての業種</option>' + cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+  if(cats.includes(current)) sel.value = current;
+}
+function renderList(){
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const terms = q ? q.split(/\s+/) : [];
+  const fStatus = document.getElementById("filter").value;
+  const fCat = document.getElementById("filter-category").value;
+  let list = prospects.slice();
+  if(fStatus) list = list.filter(p=>p.status===fStatus);
+  if(fCat) list = list.filter(p=>(p.category||"").trim()===fCat);
+  if(terms.length){
+    list = list.filter(p=>{
+      const hay = ((p.company||"")+" "+(p.prefecture||"")+" "+(p.city||"")+" "+(p.address||"")+" "+(p.category||"")+" "+(p.phone||"")+" "+(p.contact_name||"")+" "+(p.staff||"")).toLowerCase();
+      return terms.every(t=>hay.includes(t));
+    });
+  }
+  const tb = document.getElementById("list-body");
+  if(list.length===0){
+    tb.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="big">📋</div>${prospects.length===0?"まだ見込み先がありません。「＋ 見込み先を追加」か「データ管理」から名簿を取り込んでください。":"条件に合う見込み先がいません。"}</div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = list.map(rowHtml).join("");
+  bindRows();
+}
+document.getElementById("search").addEventListener("input",renderList);
+document.getElementById("filter").addEventListener("change",renderList);
+document.getElementById("filter-category").addEventListener("change",renderList);
+
+/* 地図を開く */
+function openMap(id){
+  const p = prospects.find(x=>x.id===id);
+  const query = [p.address, p.prefecture, p.city, p.company].filter(Boolean).join(" ");
+  if(!query){ showToast("住所が登録されていません", true); return; }
+  window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(query), "_blank");
+}
+
+/* =========================================================
+   ④ 追加 / 編集
+   ========================================================= */
+const editOverlay = document.getElementById("edit-overlay");
+function F(name){ return document.getElementById("f-"+name); }
+function fillStatusSelect(sel){ sel.innerHTML = STATUSES.map(s=>`<option>${s}</option>`).join(""); }
+fillStatusSelect(document.getElementById("f-status"));
+fillStatusSelect(document.getElementById("call-status"));
+
+function updateTrackingLink(){
+  const no=F("tracking").value.trim();
+  const box=document.getElementById("f-tracking-link");
+  box.innerHTML = no? `<a class="yamato-link" href="${yamatoUrl(no)}" target="_blank" rel="noopener">🚚 ヤマトで追跡する</a>` : "";
+}
+F("tracking").addEventListener("input", updateTrackingLink);
+
+function openEdit(id){
+  currentId = id || null;
+  document.getElementById("edit-title").textContent = id ? "見込み先を編集" : "見込み先を追加";
+  const p = id ? prospects.find(x=>x.id===id) : {};
+  F("sendstaff").innerHTML = staffOptionsHtml(p.send_staff);
+  F("contractstaff").innerHTML = staffOptionsHtml(p.contract_staff);
+  F("company").value=p.company||""; F("prefecture").value=p.prefecture||""; F("city").value=p.city||"";
+  F("address").value=p.address||""; F("category").value=p.category||""; F("phone").value=p.phone||"";
+  F("contact").value=p.contact_name||""; F("mobile").value=p.contact_mobile||""; F("fax").checked=!!p.fax_done;
+  F("faxnum").value=p.fax_number||""; F("email").value=p.email||"";
+  F("status").value=p.status||"未接触"; F("source").value=p.source||"アウトバウンド";
+  F("staff").value=p.staff||""; F("referrer").value=p.referrer||"";
+  F("sendstaff").value=p.send_staff||""; F("senddate").value=p.send_date||""; F("tracking").value=p.tracking_no||"";
+  F("contractstaff").value=p.contract_staff||""; F("contractdate").value=p.contract_date||"";
+  F("next").value=p.next_call||""; F("flag").value=p.flag_date||""; F("open").value=p.open_date||"";
+  F("memo").value=p.memo||"";
+  updateTrackingLink();
+  document.getElementById("delete-btn").style.display = id ? "inline-block" : "none";
+  editDirty = false;
+  editOverlay.classList.add("show");
+}
+document.getElementById("add-btn").addEventListener("click",()=>openEdit(null));
+
+document.getElementById("save-btn").addEventListener("click", async ()=>{
+  const status = F("status").value;
+  let flag = F("flag").value;
+  let open = F("open").value;
+  if((status==="新設届出中"||status==="新店オープン") && !flag) flag = todayStr();
+  if(status==="新店オープン" && !open) open = todayStr();
+  const payload = {
+    company:F("company").value.trim(), prefecture:F("prefecture").value.trim(), city:F("city").value.trim(),
+    address:F("address").value.trim(), category:F("category").value.trim(), phone:F("phone").value.trim(),
+    contact_name:F("contact").value.trim(), contact_mobile:F("mobile").value.trim(), fax_done:F("fax").checked,
+    fax_number:F("faxnum").value.trim(), email:F("email").value.trim(),
+    status:status, source:F("source").value, staff:F("staff").value.trim(), referrer:F("referrer").value.trim(),
+    send_staff:F("sendstaff").value, send_date:nullIfEmpty(F("senddate").value), tracking_no:F("tracking").value.trim(),
+    contract_staff:F("contractstaff").value, contract_date:nullIfEmpty(F("contractdate").value),
+    next_call:nullIfEmpty(F("next").value), flag_date:nullIfEmpty(flag), open_date:nullIfEmpty(open),
+    memo:F("memo").value.trim()
+  };
+  if(!payload.company && !payload.phone){ showToast("会社名か電話番号を入れてください", true); return; }
+  let ok;
+  if(currentId){ ok = await updateProspect(currentId, payload); }
+  else { payload.history=[]; ok = await insertProspect(payload); }
+  if(ok){ editDirty=false; editOverlay.classList.remove("show"); await loadProspects(); showToast("保存しました"); }
+});
+
+document.getElementById("delete-btn").addEventListener("click", async ()=>{
+  if(!currentId) return;
+  if(confirm("この見込み先を削除します。よろしいですか？")){
+    if(await removeProspect(currentId)){ editOverlay.classList.remove("show"); await loadProspects(); showToast("削除しました"); }
+  }
+});
+
+/* =========================================================
+   ⑤ 架電の記録
+   ========================================================= */
+const callOverlay = document.getElementById("call-overlay");
+function updateCallBlocks(){
+  document.getElementById("call-send-block").style.display = (selectedResult==="アポ獲得") ? "block" : "none";
+  const st=document.getElementById("call-status").value;
+  document.getElementById("call-contract-block").style.display = (st==="締結") ? "block" : "none";
+  document.getElementById("call-status-def").textContent = "定義：" + (STATUS_DEF[st]||"");
+}
+function openCall(id){
+  currentId = id; selectedResult = null;
+  const p = prospects.find(x=>x.id===id);
+  document.getElementById("call-title").textContent = (p.company||"（会社名なし）");
+  const telnum = (p.phone||"").replace(/[^0-9+]/g,"");
+  const dial = document.getElementById("call-dial");
+  if(p.phone){ dial.href = "tel:"+telnum; dial.textContent = "📞 発信する（"+p.phone+"）"; dial.style.display="inline-block"; }
+  else { dial.style.display="none"; }
+  document.getElementById("call-status").value = p.status || "未接触";
+  document.getElementById("call-next").value = p.next_call || "";
+  document.getElementById("call-note").value = "";
+  document.getElementById("call-sendstaff").innerHTML = staffOptionsHtml(p.send_staff);
+  document.getElementById("call-sendstaff").value = p.send_staff || "";
+  document.getElementById("call-senddate").value = p.send_date || "";
+  document.getElementById("call-tracking").value = p.tracking_no || "";
+  document.getElementById("call-contractstaff").innerHTML = staffOptionsHtml(p.contract_staff);
+  document.getElementById("call-contractstaff").value = p.contract_staff || "";
+  document.getElementById("call-contractdate").value = p.contract_date || "";
+  document.getElementById("result-grid").innerHTML = RESULTS.map(r=>`<button type="button" class="result-btn" data-r="${r}">${r}</button>`).join("");
+  document.querySelectorAll(".result-btn").forEach(b=>{
+    b.addEventListener("click",()=>{
+      document.querySelectorAll(".result-btn").forEach(x=>x.classList.remove("selected"));
+      b.classList.add("selected"); selectedResult=b.dataset.r; callDirty=true;
+      if(selectedResult==="アポ獲得" && !document.getElementById("call-senddate").value){
+        document.getElementById("call-senddate").value = todayStr();
+      }
+      updateCallBlocks();
+    });
+  });
+  updateCallBlocks();
+  renderHistory(p);
+  callDirty = false;
+  callOverlay.classList.add("show");
+}
+document.getElementById("call-status").addEventListener("change",()=>{
+  const st=document.getElementById("call-status").value;
+  if(st==="締結" && !document.getElementById("call-contractdate").value){
+    document.getElementById("call-contractdate").value = todayStr();
+  }
+  updateCallBlocks();
+});
+function renderHistory(p){
+  const h = (p.history||[]).slice().reverse();
+  const box = document.getElementById("call-history");
+  if(h.length===0){ box.innerHTML = `<h4>これまでの履歴</h4><p class="hint" style="margin:0;">まだ履歴はありません。</p>`; return; }
+  box.innerHTML = `<h4>これまでの履歴（${h.length}件）</h4>` + h.map(x=>
+    `<div class="hist-item"><span class="hist-date">${esc((x.date||"").slice(0,16).replace("T"," "))}</span><span><b>${esc(x.result)}</b>${x.note?"："+esc(x.note):""}</span></div>`).join("");
+}
+document.getElementById("call-map").addEventListener("click",()=>openMap(currentId));
+document.getElementById("call-edit").addEventListener("click",()=>{ callOverlay.classList.remove("show"); openEdit(currentId); });
+
+document.getElementById("call-save-btn").addEventListener("click", async ()=>{
+  if(!selectedResult){ showToast("架電の結果を選んでください", true); return; }
+  const p = prospects.find(x=>x.id===currentId);
+  const note = document.getElementById("call-note").value.trim();
+  const next = document.getElementById("call-next").value;
+  const status = document.getElementById("call-status").value;
+  const history = (p.history||[]).slice();
+  history.push({ date:new Date().toISOString(), result:selectedResult, note });
+  const payload = { history, status, next_call:nullIfEmpty(next), last_call_date:todayStr() };
+
+  // 送付情報
+  const sStaff=document.getElementById("call-sendstaff").value;
+  const sDate=document.getElementById("call-senddate").value;
+  const trk=document.getElementById("call-tracking").value.trim();
+  if(sStaff) payload.send_staff=sStaff;
+  if(trk) payload.tracking_no=trk;
+  if(sDate) payload.send_date=sDate;
+  // 締結情報
+  if(status==="締結"){
+    const cStaff=document.getElementById("call-contractstaff").value;
+    const cDate=document.getElementById("call-contractdate").value;
+    if(cStaff) payload.contract_staff=cStaff;
+    payload.contract_date = cDate || p.contract_date || todayStr();
+  }
+  // 旗・オープンの日付を自動で
+  if((status==="新設届出中"||status==="新店オープン") && !p.flag_date) payload.flag_date=todayStr();
+  if(status==="新店オープン" && !p.open_date) payload.open_date=todayStr();
+
+  if(await updateProspect(currentId, payload)){
+    callDirty=false; callOverlay.classList.remove("show"); await loadProspects(); showToast("記録しました");
+  }
+});
+
+/* =========================================================
+   ⑥ 成績
+   ========================================================= */
+function periodRange(kind){
+  const now=new Date(); const y=now.getFullYear(), m=now.getMonth();
+  const last=(yy,mm)=>String(new Date(yy,mm+1,0).getDate()).padStart(2,"0");
+  if(kind==="today"){ const t=todayStr(); return [t,t]; }
+  if(kind==="month"){ const mm=String(m+1).padStart(2,"0"); return [`${y}-${mm}-01`,`${y}-${mm}-${last(y,m)}`]; }
+  if(kind==="lastmonth"){ const d=new Date(y,m-1,1); const yy=d.getFullYear(), mo=d.getMonth(); const mm=String(mo+1).padStart(2,"0"); return [`${yy}-${mm}-01`,`${yy}-${mm}-${last(yy,mo)}`]; }
+  return ["0000-01-01","9999-12-31"];
+}
+function inRange(d,r){ if(!d) return false; const x=String(d).slice(0,10); return x>=r[0] && x<=r[1]; }
+function countSends(name,r){ return prospects.filter(p=>(p.send_staff||"")===name && inRange(p.send_date,r)).length; }
+function countContracts(name,r){ return prospects.filter(p=>(p.contract_staff||"")===name && inRange(p.contract_date,r)).length; }
+
+function rankRows(staffArr, countFn, range, unit){
+  if(staffArr.length===0) return `<tr><td colspan="3"><div class="empty" style="padding:24px;">このタイプのアポさんがまだ登録されていません。下の「アポさんの登録」から追加してください。</div></td></tr>`;
+  const rows = staffArr.map(s=>({name:s.name, n:countFn(s.name,range)})).sort((a,b)=>b.n-a.n);
+  return rows.map((x,i)=>`<tr><td class="rank-no">${i+1}</td><td>${esc(x.name)}</td><td><b>${x.n}</b> ${unit}</td></tr>`).join("");
+}
+function renderPerformance(){
+  const kind=document.getElementById("perf-period").value;
+  const range=periodRange(kind);
+  const sendStaff=staffList.filter(s=>s.type==="送付型");
+  const fullStaff=staffList.filter(s=>s.type==="一気通貫型");
+  document.getElementById("perf-send").innerHTML=rankRows(sendStaff,countSends,range,"件");
+  document.getElementById("perf-full").innerHTML=rankRows(fullStaff,countContracts,range,"件");
+}
+document.getElementById("perf-period").addEventListener("change",renderPerformance);
+
+/* アポさんの登録 */
+function renderStaff(){
+  const tb=document.getElementById("staff-body");
+  if(staffList.length===0){ tb.innerHTML=`<tr><td colspan="3"><div class="empty" style="padding:24px;">まだ登録がありません。</div></td></tr>`; return; }
+  tb.innerHTML = staffList.map(s=>`<tr>
+    <td><b>${esc(s.name)}</b></td>
+    <td><span class="type-badge ${s.type==="送付型"?"type-send":"type-full"}">${esc(s.type)}</span></td>
+    <td><button class="btn danger sm" onclick="deleteStaff('${s.id}')">削除</button></td>
+  </tr>`).join("");
+}
+document.getElementById("staff-add").addEventListener("click", async ()=>{
+  const name=document.getElementById("staff-name").value.trim();
+  const type=document.getElementById("staff-type").value;
+  if(!name){ showToast("名前を入れてください", true); return; }
+  const { error } = await sb.from(STAFF_TABLE).insert({ name, type });
+  if(error){ showToast("追加失敗："+error.message, true); return; }
+  document.getElementById("staff-name").value="";
+  await loadStaff(); showToast("追加しました");
+});
+async function deleteStaff(id){
+  if(!confirm("このアポさんを削除します。よろしいですか？")) return;
+  const { error } = await sb.from(STAFF_TABLE).delete().eq("id",id);
+  if(error){ showToast("削除失敗："+error.message, true); return; }
+  await loadStaff(); showToast("削除しました");
+}
+
+/* =========================================================
+   ⑦ キャンペーン
+   ========================================================= */
+const campOverlay=document.getElementById("camp-overlay");
+function addTierRow(count="",reward=""){
+  const box=document.getElementById("camp-tiers");
+  const div=document.createElement("div");
+  div.className="tier-row";
+  div.innerHTML=`<input type="number" min="1" placeholder="件数" class="tier-count" value="${count}">
+    <input type="number" min="0" placeholder="金額（円）" class="tier-reward" value="${reward}">
+    <button type="button" class="icon-btn tier-del">×</button>`;
+  div.querySelector(".tier-del").addEventListener("click",()=>div.remove());
+  box.appendChild(div);
+}
+document.getElementById("camp-add-tier").addEventListener("click",()=>{ addTierRow(); campDirty=true; });
+document.getElementById("camp-new-btn").addEventListener("click",()=>{
+  document.getElementById("camp-name").value="";
+  document.getElementById("camp-metric").value="送付数";
+  document.getElementById("camp-start").value=todayStr();
+  document.getElementById("camp-end").value=todayStr();
+  document.getElementById("camp-tiers").innerHTML="";
+  addTierRow();
+  campDirty = false;
+  campOverlay.classList.add("show");
+});
+document.querySelectorAll("[data-close-camp]").forEach(el=>el.addEventListener("click",()=>guardClose("camp")));
+campOverlay.addEventListener("click",e=>{ if(e.target===campOverlay) guardClose("camp"); });
+
+document.getElementById("camp-save").addEventListener("click", async ()=>{
+  const name=document.getElementById("camp-name").value.trim();
+  if(!name){ showToast("キャンペーン名を入れてください", true); return; }
+  const tiers=[...document.querySelectorAll("#camp-tiers .tier-row")].map(r=>({
+    count:Number(r.querySelector(".tier-count").value)||0,
+    reward:Number(r.querySelector(".tier-reward").value)||0
+  })).filter(t=>t.count>0).sort((a,b)=>a.count-b.count);
+  const payload={
+    name, metric:document.getElementById("camp-metric").value,
+    start_date:nullIfEmpty(document.getElementById("camp-start").value),
+    end_date:nullIfEmpty(document.getElementById("camp-end").value),
+    tiers
+  };
+  const { error } = await sb.from(CAMP_TABLE).insert(payload);
+  if(error){ showToast("保存失敗："+error.message, true); return; }
+  campDirty=false; campOverlay.classList.remove("show");
+  await loadCampaigns(); showToast("キャンペーンを作りました");
+});
+async function deleteCampaign(id){
+  if(!confirm("このキャンペーンを削除します。よろしいですか？")) return;
+  const { error } = await sb.from(CAMP_TABLE).delete().eq("id",id);
+  if(error){ showToast("削除失敗："+error.message, true); return; }
+  await loadCampaigns(); showToast("削除しました");
+}
+function rewardFor(tiers,achieved){ let r=0; for(const t of tiers){ if(achieved>=t.count) r=t.reward; } return r; }
+function nextTier(tiers,achieved){ for(const t of tiers){ if(t.count>achieved) return t; } return null; }
+function renderCampaigns(){
+  const box=document.getElementById("camp-list");
+  if(campaigns.length===0){ box.innerHTML=`<div class="empty"><div class="big">🎯</div>まだキャンペーンがありません。「＋ キャンペーンを作る」から作成してください。</div>`; return; }
+  box.innerHTML = campaigns.map(c=>{
+    const tiers=(c.tiers||[]).slice().sort((a,b)=>a.count-b.count);
+    const range=[c.start_date||"0000-01-01", c.end_date||"9999-12-31"];
+    const isSend=(c.metric==="送付数");
+    const staffArr=staffList.filter(s=> isSend ? s.type==="送付型" : s.type==="一気通貫型");
+    const countFn=isSend?countSends:countContracts;
+    const rows=staffArr.map(s=>({name:s.name,n:countFn(s.name,range)})).sort((a,b)=>b.n-a.n);
+    const tierText = tiers.length? tiers.map(t=>`${t.count}件→${t.reward.toLocaleString()}円`).join("／") : "（未設定）";
+    const period = `${c.start_date||"いつでも"} 〜 ${c.end_date||"いつでも"}`;
+    const body = rows.length? rows.map((x,i)=>{
+      const rw=rewardFor(tiers,x.n); const nt=nextTier(tiers,x.n);
+      const prog = nt? `あと${nt.count-x.n}件で ${nt.reward.toLocaleString()}円` : (tiers.length? "最高ランク達成🎉":"");
+      return `<tr><td class="rank-no">${i+1}</td><td>${esc(x.name)}</td><td><b>${x.n}</b>件</td><td class="reward">${rw.toLocaleString()}円</td><td class="hint" style="margin:0;">${prog}</td></tr>`;
+    }).join("") : `<tr><td colspan="5"><div class="empty" style="padding:20px;">対象のアポさんが未登録です。</div></td></tr>`;
+    return `<div class="camp-card">
+      <h4>${esc(c.name)}</h4>
+      <div class="camp-meta"><span class="pill">${esc(c.metric)}</span><span class="pill">${period}</span>ごほうび：${tierText}</div>
+      <div class="table-wrap"><table><thead><tr><th>順位</th><th>アポさん</th><th>${isSend?"送付数":"締結数"}</th><th>ごほうび</th><th>あと</th></tr></thead><tbody>${body}</tbody></table></div>
+      <div style="margin-top:10px;"><button class="btn danger sm" onclick="deleteCampaign('${c.id}')">このキャンペーンを削除</button></div>
+    </div>`;
+  }).join("");
+}
+
+/* =========================================================
+   ⑧ 共通：閉じる / タブ
+   ========================================================= */
+function guardClose(which){
+  const dirty = which==="edit" ? editDirty : which==="call" ? callDirty : campDirty;
+  if(dirty && !confirm("まだ保存していません。閉じると入力した内容は消えます。本当に閉じてよろしいですか？")) return;
+  if(which==="edit"){ editOverlay.classList.remove("show"); editDirty=false; }
+  else if(which==="call"){ callOverlay.classList.remove("show"); callDirty=false; }
+  else { campOverlay.classList.remove("show"); campDirty=false; }
+}
+document.querySelectorAll("[data-close]").forEach(el=>el.addEventListener("click",()=>{
+  const ov=el.closest(".overlay");
+  if(ov===editOverlay) guardClose("edit");
+  else if(ov===callOverlay) guardClose("call");
+}));
+editOverlay.addEventListener("click",e=>{ if(e.target===editOverlay) guardClose("edit"); });
+callOverlay.addEventListener("click",e=>{ if(e.target===callOverlay) guardClose("call"); });
+/* 入力や変更があったら「未保存」とみなす */
+document.querySelector("#edit-overlay .modal-body").addEventListener("input",()=>editDirty=true);
+document.querySelector("#edit-overlay .modal-body").addEventListener("change",()=>editDirty=true);
+document.querySelector("#call-overlay .modal-body").addEventListener("input",()=>callDirty=true);
+document.querySelector("#call-overlay .modal-body").addEventListener("change",()=>callDirty=true);
+document.querySelector("#camp-overlay .modal-body").addEventListener("input",()=>campDirty=true);
+document.querySelector("#camp-overlay .modal-body").addEventListener("change",()=>campDirty=true);
+
+document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  tab.classList.add("active");
+  document.getElementById("page-"+tab.dataset.tab).classList.add("active");
+  if(tab.dataset.tab==="perf") renderPerformance();
+  if(tab.dataset.tab==="campaign") renderCampaigns();
+}));
+
+/* =========================================================
+   ⑨ データ管理（CSV取り込み / 書き出し / サンプル）
+   ========================================================= */
+document.getElementById("export-btn").addEventListener("click",()=>{
+  if(prospects.length===0){ showToast("データがありません", true); return; }
+  const head = ["会社名","都道府県","市区町村","住所","業種","電話番号","事業者担当者","携帯番号","FAX番号","メール","FAX済み","開拓手段","紹介元","状況","担当者","次回予定","送付担当","発送日","追跡番号","締結担当","締結日","旗の日","新店オープン日","架電回数","メモ"];
+  const rows = prospects.map(p=>[
+    p.company,p.prefecture,p.city,p.address,p.category,p.phone,p.contact_name,p.contact_mobile,(p.fax_number||""),(p.email||""),(p.fax_done?"済":""),
+    p.source,p.referrer,p.status,p.staff,p.next_call||"",
+    p.send_staff||"",p.send_date||"",p.tracking_no||"",p.contract_staff||"",p.contract_date||"",
+    p.flag_date||"",p.open_date||"",(p.history||[]).length,p.memo||""
+  ].map(v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`).join(","));
+  const csv = "\uFEFF"+head.join(",")+"\n"+rows.join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download="一の旗_アウトバウンド_"+todayStr()+".csv"; a.click();
+  showToast("ダウンロードしました");
+});
+
+document.getElementById("csv-input").addEventListener("change", e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ()=>{
+    const lines=reader.result.replace(/\r/g,"").split("\n").filter(l=>l.trim()!=="");
+    let start=0;
+    if(lines[0] && /会社名|会社|社名/.test(lines[0])) start=1;
+    const rows=[];
+    for(let i=start;i<lines.length;i++){
+      const c=parseCsvLine(lines[i]);
+      const company=(c[0]||"").trim();
+      if(!company && !(c[5]||"").trim()) continue;
+      rows.push({
+        company, prefecture:(c[1]||"").trim(), city:(c[2]||"").trim(), address:(c[3]||"").trim(),
+        category:(c[4]||"").trim(), phone:(c[5]||"").trim(), contact_name:(c[6]||"").trim(),
+        staff:(c[7]||"").trim(), memo:(c[8]||"").trim(), status:"未接触", source:"アウトバウンド", history:[]
+      });
+    }
+    e.target.value="";
+    if(rows.length===0){ showToast("取り込める行がありませんでした", true); return; }
+    const { error } = await sb.from(TABLE).insert(rows);
+    if(error){ showToast("取り込み失敗："+error.message, true); return; }
+    await loadProspects(); showToast(rows.length+"件を取り込みました");
+  };
+  reader.readAsText(file);
+});
+function parseCsvLine(line){
+  const out=[]; let cur="", q=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(q){ if(ch==='"'&&line[i+1]==='"'){cur+='"';i++;} else if(ch==='"'){q=false;} else cur+=ch; }
+    else { if(ch==='"')q=true; else if(ch===","){out.push(cur);cur="";} else cur+=ch; }
+  }
+  out.push(cur); return out;
+}
+
+document.getElementById("sample-btn").addEventListener("click", async ()=>{
+  const t=todayStr();
+  const sample=[
+    {company:"株式会社ほくと金属",prefecture:"北海道",city:"札幌市",address:"北海道札幌市中央区北1条西2丁目",category:"金属buyer",phone:"011-111-2222",contact_name:"工場長",status:"未接触",source:"アウトバウンド",history:[]},
+    {company:"みなみ質店",prefecture:"福岡県",city:"福岡市",address:"福岡県福岡市博多区博多駅前2-1-1",category:"質屋",phone:"092-333-4444",contact_name:"店長",status:"接触中",source:"アウトバウンド",staff:"佐藤",send_staff:"佐藤",send_date:t,history:[{date:new Date().toISOString(),result:"アポ獲得",note:"資料送付済み"}]},
+    {company:"中央リサイクル商会",prefecture:"愛知県",city:"名古屋市",address:"愛知県名古屋市中区栄3-5-1",category:"リサイクル",phone:"052-555-6666",contact_name:"代表",status:"締結",source:"アウトバウンド",staff:"鈴木",contract_staff:"鈴木",contract_date:t,history:[]}
+  ];
+  const { error } = await sb.from(TABLE).insert(sample);
+  if(error){ showToast("追加失敗："+error.message, true); return; }
+  await loadProspects(); showToast("サンプルを3件入れました");
+});
+
+/* =========================================================
+   ⑩ 起動
+   ========================================================= */
+async function boot(){
+  await loadStaff();
+  await loadCampaigns();
+  await loadProspects();
+}
+/* =========================================================
+   ⑪ ログイン制御
+   ========================================================= */
+const loginOverlay = document.getElementById("login-overlay");
+let _booted = false;
+async function showApp(){
+  loginOverlay.classList.add("hidden");
+  if(!_booted){ _booted = true; await boot(); }
+}
+function showLogin(){ loginOverlay.classList.remove("hidden"); }
+async function doLogin(){
+  const email = (document.getElementById("login-email").value||"").trim();
+  const pass  = document.getElementById("login-pass").value||"";
+  const errEl = document.getElementById("login-error");
+  errEl.textContent = "";
+  if(!email || !pass){ errEl.textContent = "メールとパスワードを入れてください"; return; }
+  const btn = document.getElementById("login-btn");
+  btn.disabled = true; btn.textContent = "ログイン中…";
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = "ログイン";
+  if(error){ errEl.textContent = "ログインできませんでした（メール・パスワードをご確認ください）"; return; }
+  document.getElementById("login-pass").value = "";
+  await showApp();
+}
+document.getElementById("login-btn").addEventListener("click", doLogin);
+document.getElementById("login-pass").addEventListener("keydown", function(e){ if(e.key==="Enter") doLogin(); });
+const _logoutBtn = document.getElementById("logout-btn");
+if(_logoutBtn) _logoutBtn.addEventListener("click", async function(){ await sb.auth.signOut(); location.reload(); });
+
+/* 起動時：ログイン済みなら即表示、未ログインならログイン画面 */
+(async function(){
+  try{
+    const { data } = await sb.auth.getSession();
+    if(data && data.session){ await showApp(); } else { showLogin(); }
+  }catch(e){ showLogin(); }
+})();
+</script>
+</body>
+</html>
