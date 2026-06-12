@@ -9,18 +9,19 @@
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;color:var(--ink);}
   #app{display:flex;flex-direction:column;height:100%;}
-  header{background:var(--indigo);color:#fff;padding:10px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.18);z-index:5;}
+  header{background:var(--indigo);color:#fff;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.18);z-index:5;}
   header .mark{font-size:20px;color:#f4b9ad;}
   header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.04em;}
   header .accent{color:#f4b9ad;}
   header .sub{font-size:12px;opacity:.8;margin-left:2px;}
-  header .total{margin-left:auto;font-size:13px;background:rgba(255,255,255,.12);padding:4px 11px;border-radius:999px;}
-  header .logout{background:rgba(255,255,255,.16);color:#fff;border:none;cursor:pointer;font-family:inherit;font-size:12px;padding:5px 12px;border-radius:999px;margin-left:10px;}
-  header .logout:hover{background:rgba(255,255,255,.28);}
+  header .spacer{margin-left:auto;}
+  header .total{font-size:13px;background:rgba(255,255,255,.12);padding:4px 11px;border-radius:999px;}
+  header .navbtn{background:rgba(255,255,255,.16);color:#fff;border:none;cursor:pointer;font-family:inherit;font-size:12px;padding:5px 12px;border-radius:999px;text-decoration:none;display:inline-block;}
+  header .navbtn:hover{background:rgba(255,255,255,.30);}
   #wrap{position:relative;flex:1;min-height:0;}
   #map{position:absolute;inset:0;background:#e8eaed;}
   .panel{position:absolute;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.14);}
-  #legend{top:12px;right:12px;width:212px;padding:12px 12px 8px;font-size:12.5px;max-height:calc(100% - 24px);overflow:auto;}
+  #legend{top:12px;right:12px;width:218px;padding:12px 12px 8px;font-size:12.5px;max-height:calc(100% - 24px);overflow:auto;}
   #legend h2{font-size:11.5px;margin:0 0 7px;color:#6b6456;letter-spacing:.06em;font-weight:700;}
   #legend .gl{font-size:11px;color:#9a927f;margin:0 0 3px 2px;}
   .grp{margin-bottom:9px;}
@@ -42,7 +43,6 @@
   #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;background:var(--cream);z-index:10;}
   #err .box{max-width:430px;font-size:14px;line-height:1.8;color:#4a4438;}
   #err b{color:var(--vermilion);}
-  /* ログイン画面 */
   #login-overlay{position:fixed;inset:0;background:linear-gradient(160deg,#22304f,#161f33);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
   #login-overlay.hidden{display:none;}
   .login-card{background:#fff;border-radius:16px;padding:30px 28px;width:340px;max-width:100%;box-shadow:0 12px 44px rgba(0,0,0,.35);}
@@ -58,7 +58,6 @@
 </head>
 <body>
 
-<!-- ログイン（チーム専用） -->
 <div id="login-overlay">
   <div class="login-card">
     <div class="login-logo"><span class="mk">&#9730;</span> 一の旗 全国マップ</div>
@@ -77,8 +76,10 @@
     <span class="mark">&#9730;</span>
     <h1>一の旗 <span class="accent">全国マップ</span></h1>
     <span class="sub">2026-05-25 時点</span>
+    <span class="spacer"></span>
     <span class="total" id="total"></span>
-    <button class="logout" id="logout-btn">ログアウト</button>
+    <a class="navbtn" href="ichinohata.html">&#128222; 架電リスト</a>
+    <button class="navbtn" id="logout-btn">ログアウト</button>
   </header>
   <div id="wrap">
     <div id="map"></div>
@@ -94,32 +95,41 @@ const SUPABASE_KEY='sb_publishable_YQFRvwddrR0_8Bgmn2EZ_g_zNOHZ74V';
 const PHOTO_BUCKET='store-photos';
 function photoUrl(id){return SUPABASE_URL+'/storage/v1/object/public/'+PHOTO_BUCKET+'/'+id+'.jpg';}
 const CATS = {
-  '本社':    {color:'#6b3fa0', group:'自社のお店（RM）'},
-  '支店':    {color:'#1f3a6e', group:'自社のお店（RM）'},
-  'ショップ':{color:'#2e7d32', group:'自社のお店（RM）'},
-  '両方OK':  {color:'#1565c0', group:'提携先のお店（FS）'},
-  '来店のみ':{color:'#f4b400', group:'提携先のお店（FS）'},
-  '両方NG':  {color:'#c62828', group:'提携先のお店（FS）'}
+  '本社':    {color:'#6b3fa0', group:'自社のお店（RM）', shape:'castle-big', label:'本社'},
+  '支店':    {color:'#1f3a6e', group:'自社のお店（RM）', shape:'castle',     label:'支店'},
+  'ショップ':{color:'#2e7d32', group:'自社のお店（RM）', shape:'shop',       label:'ショップ'},
+  '両方OK':  {color:'#1565c0', group:'提携先のお店（FS）', shape:'pennant',   label:'両方OK'},
+  '来店のみ':{color:'#f4b400', group:'提携先のお店（FS）', shape:'pennant',   label:'来店のみ'},
+  '両方NG':  {color:'#c62828', group:'提携先のお店（FS）', shape:'pennant',   label:'両方NG'},
+  '架電合意':{color:'#e7a99e', group:'一の旗（架電連動）', shape:'nobori',    label:'取引合意（薄い旗）'},
+  '架電開店':{color:'#c0392b', group:'一の旗（架電連動）', shape:'nobori',    label:'新店オープン（朱の旗）'}
 };
-const CAT_ORDER = ['本社','支店','ショップ','両方OK','来店のみ','両方NG'];
+const CAT_ORDER = ['本社','支店','ショップ','両方OK','来店のみ','両方NG','架電合意','架電開店'];
+const GROUPS = ['自社のお店（RM）','提携先のお店（FS）','一の旗（架電連動）'];
+const FLAG_STATUSES = ['取引合意','書類準備中','締結','新設届出中','新店オープン'];
 const STROKE='#2b2b2b';
 function enc(svg){return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);}
 function wrap(w,h,inner){return '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">'+inner+'</svg>';}
 function pennantInner(c){return '<line x1="7" y1="5" x2="7" y2="34" stroke="'+STROKE+'" stroke-width="2.4" stroke-linecap="round"/><path d="M7 6 L25 11 L7 16.5 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.3" stroke-linejoin="round"/><circle cx="7" cy="34" r="2.6" fill="'+STROKE+'"/>';}
 function shopInner(c){return '<line x1="7" y1="5" x2="7" y2="34" stroke="'+STROKE+'" stroke-width="2.4" stroke-linecap="round"/><path d="M7 6 L24 6 L19.5 11 L24 16 L7 16 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.3" stroke-linejoin="round"/><circle cx="7" cy="34" r="2.6" fill="'+STROKE+'"/>';}
+function noboriInner(c){return '<line x1="6" y1="3" x2="6" y2="37" stroke="'+STROKE+'" stroke-width="2.4" stroke-linecap="round"/><path d="M6 4 L21 4 L21 25 L6 25 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.2" stroke-linejoin="round"/><circle cx="6" cy="3" r="2.3" fill="#d4af37" stroke="'+STROKE+'" stroke-width="0.8"/><circle cx="6" cy="37" r="2.5" fill="'+STROKE+'"/>';}
 function castleInner(c){return '<path d="M5 34 L25 34 L22 28 L8 28 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.2" stroke-linejoin="round"/><rect x="9" y="21.5" width="12" height="6.7" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.1"/><path d="M5 22.5 L15 15.5 L25 22.5 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.1" stroke-linejoin="round"/><rect x="11.7" y="12" width="6.6" height="4.5" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.1"/><path d="M8.5 13 L15 7.8 L21.5 13 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.1" stroke-linejoin="round"/><rect x="14.2" y="5.5" width="1.6" height="2.6" fill="'+STROKE+'"/>';}
 function bigCastleInner(c){return '<path d="M3 40 L29 40 L26 33 L6 33 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.3" stroke-linejoin="round"/><rect x="7.5" y="26" width="17" height="7" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.2"/><path d="M3.5 27 L16 19.5 L28.5 27 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.2" stroke-linejoin="round"/><rect x="10" y="15.5" width="12" height="5.5" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.2"/><path d="M6.5 16.5 L16 10 L25.5 16.5 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.2" stroke-linejoin="round"/><rect x="12.5" y="7" width="7" height="3.8" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.1"/><path d="M9.5 7.8 L16 2.8 L22.5 7.8 Z" fill="'+c+'" stroke="'+STROKE+'" stroke-width="1.1" stroke-linejoin="round"/><rect x="15.2" y="0.6" width="1.7" height="2.6" fill="#d4af37"/>';}
-function shapeSVG(cat,color){
-  if(cat==='本社')    return wrap(32,42,bigCastleInner(color));
-  if(cat==='支店')    return wrap(30,38,castleInner(color));
-  if(cat==='ショップ')return wrap(30,38,shopInner(color));
+function innerFor(shape,color){
+  if(shape==='castle-big') return wrap(32,42,bigCastleInner(color));
+  if(shape==='castle')     return wrap(30,38,castleInner(color));
+  if(shape==='shop')       return wrap(30,38,shopInner(color));
+  if(shape==='nobori')     return wrap(28,40,noboriInner(color));
   return wrap(30,38,pennantInner(color));
 }
-function iconFor(cat,color){
-  if(cat==='本社')    return {url:enc(wrap(32,42,bigCastleInner(color))),scaledSize:new google.maps.Size(37,48),anchor:new google.maps.Point(18.5,45.7)};
-  if(cat==='支店')    return {url:enc(wrap(30,38,castleInner(color))),   scaledSize:new google.maps.Size(30,38),anchor:new google.maps.Point(15,34)};
-  if(cat==='ショップ')return {url:enc(wrap(30,38,shopInner(color))),     scaledSize:new google.maps.Size(30,38),anchor:new google.maps.Point(7,34)};
-  return {url:enc(wrap(30,38,pennantInner(color))),scaledSize:new google.maps.Size(30,38),anchor:new google.maps.Point(7,34)};
+function shapeSVG(cat){ var d=CATS[cat]||{shape:'pennant',color:'#888'}; return innerFor(d.shape, d.color); }
+function iconFor(cat){
+  var d=CATS[cat]||{shape:'pennant',color:'#888'}; var c=d.color;
+  if(d.shape==='castle-big') return {url:enc(wrap(32,42,bigCastleInner(c))),scaledSize:new google.maps.Size(37,48),anchor:new google.maps.Point(18.5,45.7)};
+  if(d.shape==='castle')     return {url:enc(wrap(30,38,castleInner(c))),   scaledSize:new google.maps.Size(30,38),anchor:new google.maps.Point(15,34)};
+  if(d.shape==='shop')       return {url:enc(wrap(30,38,shopInner(c))),     scaledSize:new google.maps.Size(30,38),anchor:new google.maps.Point(7,34)};
+  if(d.shape==='nobori')     return {url:enc(wrap(28,40,noboriInner(c))),   scaledSize:new google.maps.Size(31,44),anchor:new google.maps.Point(6.6,44)};
+  return {url:enc(wrap(30,38,pennantInner(c))),scaledSize:new google.maps.Size(30,38),anchor:new google.maps.Point(7,34)};
 }
 function esc(t){return (t||'').replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]);});}
 let map, info, markersByCat={}, shown={};
@@ -130,8 +140,7 @@ function initMap(){
   var bounds=new google.maps.LatLngBounds();
   CAT_ORDER.forEach(function(c){markersByCat[c]=[];});
   STORES.forEach(function(s){
-    var cat=CATS[s.cat]||{color:'#888'};
-    var m=new google.maps.Marker({position:{lat:s.lat,lng:s.lng},map:map,title:s.name,icon:iconFor(s.cat,cat.color)});
+    var m=new google.maps.Marker({position:{lat:s.lat,lng:s.lng},map:map,title:s.name,icon:iconFor(s.cat)});
     m.addListener('click',function(){info.setContent(infoHTML(s));info.open(map,m);});
     (markersByCat[s.cat]||(markersByCat[s.cat]=[])).push(m);
     bounds.extend(m.getPosition());
@@ -139,26 +148,34 @@ function initMap(){
   if(!bounds.isEmpty()) map.fitBounds(bounds);
   buildLegend();
   document.getElementById('total').textContent='全 '+STORES.length+' 店舗';
+  loadFlags();
 }
 function infoHTML(s){
-  var c=CATS[s.cat]||{color:'#888'}; var light=false; var meta='';
+  var c=CATS[s.cat]||{color:'#888'}; var meta='';
   if(s.group==='FS'){
     meta='<div class="iw-meta">来店買取：'+esc(s.raiten)+'　／　出張所：'+esc(s.shutcho)+'</div>';
     if(s.code) meta+='<div class="iw-code">'+esc(s.code)+'</div>';
   }
   var photo='<img class="iw-photo" src="'+photoUrl(s.id)+'" onerror="this.style.display=\'none\'" alt="">';
-  return '<div class="iw"><span class="iw-cat '+(light?'light':'')+'" style="background:'+c.color+'">'+esc(s.cat)+'</span>'
+  return '<div class="iw"><span class="iw-cat" style="background:'+c.color+'">'+esc(s.cat)+'</span>'
     +'<div class="iw-name">'+esc(s.name)+'</div><div class="iw-pref">'+esc(s.pref)+'</div>'
     +(s.company?'<div class="iw-co">'+esc(s.company)+'</div>':'')+meta+photo+'</div>';
 }
+function flagInfoHTML(p,cat){
+  var d=CATS[cat]; var label=(cat==='架電開店')?'新店オープン':'取引合意';
+  var region=[p.prefecture,p.city].filter(Boolean).join(' ');
+  return '<div class="iw"><span class="iw-cat" style="background:'+d.color+';color:#3a1a14;border:1px solid #2b2b2b">&#9730; '+esc(label)+'</span>'
+    +'<div class="iw-name">'+esc(p.company||'（会社名なし）')+'</div>'
+    +'<div class="iw-pref">'+esc(region)+'</div>'
+    +'<div class="iw-meta">状況：'+esc(p.status)+'</div></div>';
+}
 function buildLegend(){
   var counts={}; CAT_ORDER.forEach(function(c){counts[c]=(markersByCat[c]||[]).length;});
-  var groups=['自社のお店（RM）','提携先のお店（FS）'];
   var html='<h2>凡例（クリックで表示の切替）</h2>';
-  groups.forEach(function(g){
+  GROUPS.forEach(function(g){
     html+='<div class="grp"><div class="gl">'+g+'</div>';
     CAT_ORDER.filter(function(c){return CATS[c].group===g;}).forEach(function(c){
-      html+='<div class="leg" data-cat="'+c+'"><img class="sw" src="'+enc(shapeSVG(c,CATS[c].color))+'"><span class="nm">'+c+'</span><span class="ct">'+(counts[c]||0)+'</span></div>';
+      html+='<div class="leg'+(shown[c]?'':' off')+'" data-cat="'+c+'"><img class="sw" src="'+enc(shapeSVG(c))+'"><span class="nm">'+CATS[c].label+'</span><span class="ct">'+(counts[c]||0)+'</span></div>';
     });
     html+='</div>';
   });
@@ -169,6 +186,39 @@ function buildLegend(){
       (markersByCat[c]||[]).forEach(function(m){m.setMap(shown[c]?map:null);});
     });
   });
+}
+function flagCat(status){ return status==='新店オープン' ? '架電開店' : '架電合意'; }
+function geocodeOne(geocoder, addr){
+  return new Promise(function(resolve){
+    geocoder.geocode({address:addr, region:'JP'}, function(results,status){
+      if(status==='OK' && results && results[0]){ var l=results[0].geometry.location; resolve({lat:l.lat(), lng:l.lng()}); }
+      else { resolve(null); }
+    });
+  });
+}
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+async function loadFlags(){
+  if(!sb) return;
+  try{
+    var res = await sb.from('ichinohata').select('id,company,prefecture,city,address,status').in('status', FLAG_STATUSES);
+    if(res.error || !res.data){ return; }
+    var geocoder = new google.maps.Geocoder();
+    for(var i=0;i<res.data.length;i++){
+      var p=res.data[i];
+      var addr=[p.address,p.prefecture,p.city,p.company].filter(Boolean).join(' ');
+      if(!addr) continue;
+      var key='ichgeo:'+addr, pos=null, wasCached=false;
+      try{ var cv=localStorage.getItem(key); if(cv){ pos=JSON.parse(cv); wasCached=true; } }catch(e){}
+      if(!pos){ pos=await geocodeOne(geocoder, addr); if(pos){ try{ localStorage.setItem(key, JSON.stringify(pos)); }catch(e){} } }
+      if(!pos){ continue; }
+      var cat=flagCat(p.status);
+      var m=new google.maps.Marker({position:pos, map:(shown[cat]?map:null), title:(p.company||''), icon:iconFor(cat)});
+      (function(pp,cc,mk){ mk.addListener('click',function(){ info.setContent(flagInfoHTML(pp,cc)); info.open(map,mk); }); })(p,cat,m);
+      (markersByCat[cat]||(markersByCat[cat]=[])).push(m);
+      if(!wasCached){ await sleep(160); }
+    }
+    buildLegend();
+  }catch(e){ /* 旗の読み込み失敗でも基本地図は動く */ }
 }
 function gmapsError(){
   document.getElementById('err').style.display='flex';
