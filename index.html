@@ -15,6 +15,8 @@
   header .accent{color:#f4b9ad;}
   header .sub{font-size:12px;opacity:.8;margin-left:2px;}
   header .total{margin-left:auto;font-size:13px;background:rgba(255,255,255,.12);padding:4px 11px;border-radius:999px;}
+  header .logout{background:rgba(255,255,255,.16);color:#fff;border:none;cursor:pointer;font-family:inherit;font-size:12px;padding:5px 12px;border-radius:999px;margin-left:10px;}
+  header .logout:hover{background:rgba(255,255,255,.28);}
   #wrap{position:relative;flex:1;min-height:0;}
   #map{position:absolute;inset:0;background:#e8eaed;}
   .panel{position:absolute;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.14);}
@@ -40,15 +42,43 @@
   #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;background:var(--cream);z-index:10;}
   #err .box{max-width:430px;font-size:14px;line-height:1.8;color:#4a4438;}
   #err b{color:var(--vermilion);}
+  /* ログイン画面 */
+  #login-overlay{position:fixed;inset:0;background:linear-gradient(160deg,#22304f,#161f33);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+  #login-overlay.hidden{display:none;}
+  .login-card{background:#fff;border-radius:16px;padding:30px 28px;width:340px;max-width:100%;box-shadow:0 12px 44px rgba(0,0,0,.35);}
+  .login-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;color:var(--ink);}
+  .login-logo .mk{color:var(--vermilion);font-size:22px;}
+  .login-sub{color:#8a8372;font-size:13px;margin:6px 0 18px;}
+  .login-label{display:block;font-size:12px;color:#7a7568;font-weight:600;margin:12px 0 4px;}
+  #login-overlay input{width:100%;font-size:14px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-family:inherit;}
+  .login-btn{width:100%;margin-top:20px;padding:12px;font-size:15px;font-weight:700;background:var(--indigo);color:#fff;border:none;border-radius:9px;cursor:pointer;}
+  .login-btn:hover{background:#2c3e64;}
+  .login-error{color:var(--vermilion);font-size:13px;margin-top:10px;min-height:18px;}
 </style>
 </head>
 <body>
+
+<!-- ログイン（チーム専用） -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo"><span class="mk">&#9730;</span> 一の旗 全国マップ</div>
+    <p class="login-sub">チーム専用・ログインしてください</p>
+    <label class="login-label">メールアドレス</label>
+    <input id="login-email" type="email" autocomplete="username" placeholder="staff@example.com">
+    <label class="login-label">パスワード</label>
+    <input id="login-pass" type="password" autocomplete="current-password" placeholder="パスワード">
+    <button class="login-btn" id="login-btn">ログイン</button>
+    <div id="login-error" class="login-error"></div>
+  </div>
+</div>
+
 <div id="app">
   <header>
     <span class="mark">&#9730;</span>
     <h1>一の旗 <span class="accent">全国マップ</span></h1>
     <span class="sub">2026-05-25 時点</span>
     <span class="total" id="total"></span>
+    <button class="logout" id="logout-btn">ログアウト</button>
   </header>
   <div id="wrap">
     <div id="map"></div>
@@ -56,9 +86,11 @@
     <div id="err"><div class="box" id="errmsg"></div></div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const STORES = [{"id": "sde3c15e6d", "group": "FS", "pref": "青森県", "name": "青森店", "company": "モリピアみかみ", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS015", "lat": 40.7978437, "lng": 140.7553809}, {"id": "sbc7e2960b", "group": "FS", "pref": "秋田県", "name": "湯沢店", "company": "佐々木ラジオ店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS021", "lat": 39.0505578, "lng": 140.4155087}, {"id": "s2c725b95c", "group": "FS", "pref": "山形県", "name": "酒田店", "company": "サイクルぽーと", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS009", "lat": 38.8885361, "lng": 139.9234469}, {"id": "sb747f6758", "group": "FS", "pref": "茨城県", "name": "鹿嶋店", "company": "有限会社高野電機", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS001", "lat": 35.9641745, "lng": 140.6294941}, {"id": "sef436a9fd", "group": "FS", "pref": "群馬県", "name": "富岡店", "company": "写真のヤジマ", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS037", "lat": 36.2493116, "lng": 138.8562474}, {"id": "s6d1de3916", "group": "FS", "pref": "埼玉県", "name": "行田店", "company": "餃子工房ヨコミゾ(株)", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS022", "lat": 36.1378191, "lng": 139.4771365}, {"id": "s40e53efbe", "group": "FS", "pref": "埼玉県", "name": "鴻巣店", "company": "サイド商会吹上店", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS018", "lat": 36.1017161, "lng": 139.4585997}, {"id": "sdc57a59c9", "group": "FS", "pref": "埼玉県", "name": "吉見店", "company": "アイテム１６（株）", "cat": "来店のみ", "raiten": "◯", "shutcho": "?", "code": "FS024", "lat": 36.049174, "lng": 139.4372161}, {"id": "sd42903838", "group": "FS", "pref": "埼玉県", "name": "鶴ヶ島店", "company": "ＢＯＵＮＣＥ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS003", "lat": 35.9396755, "lng": 139.4045136}, {"id": "s5215d4f19", "group": "FS", "pref": "埼玉県", "name": "三郷店", "company": "（株）優信興業", "cat": "両方NG", "raiten": "?", "shutcho": "?", "code": "FS023", "lat": 35.8139708, "lng": 139.8781944}, {"id": "s6e3c70086", "group": "FS", "pref": "千葉県", "name": "旭店", "company": "ミカドデンキ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS029", "lat": 35.719484, "lng": 140.6520144}, {"id": "sb048acad0", "group": "FS", "pref": "千葉県", "name": "千葉中央店", "company": "株式会社大竹商事", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS028", "lat": 35.5764847, "lng": 140.1372655}, {"id": "scce01fd0a", "group": "FS", "pref": "東京都", "name": "武蔵村山店", "company": "自転車屋ＦＬＡＴ", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS008", "lat": 35.7426106, "lng": 139.3982969}, {"id": "sf1e149b06", "group": "FS", "pref": "東京都", "name": "小平店", "company": "和田輪業", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS005", "lat": 35.72816, "lng": 139.5145903}, {"id": "s3e9ae6e47", "group": "FS", "pref": "東京都", "name": "杉並高井戸店", "company": "Barきまま（RTop高井戸駅前ビル4階）", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS035", "lat": 35.6857913, "lng": 139.6159031}, {"id": "s0f22d5e6d", "group": "FS", "pref": "東京都", "name": "江戸川店", "company": "repos etwa", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS048", "lat": 35.7173968, "lng": 139.8895763}, {"id": "s022cd2027", "group": "FS", "pref": "神奈川県", "name": "横須賀店", "company": "武山電化センター", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS002", "lat": 35.219438, "lng": 139.6366131}, {"id": "sfc58925d3", "group": "FS", "pref": "新潟県", "name": "新潟亀田店", "company": "高橋自転車店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS007", "lat": 37.8676699, "lng": 139.1085616}, {"id": "s957ec13aa", "group": "FS", "pref": "新潟県", "name": "長岡十日町店", "company": "有限会社五井長", "cat": "来店のみ", "raiten": "?", "shutcho": "?", "code": "FS031", "lat": 37.3883274, "lng": 138.8385945}, {"id": "see1049505", "group": "FS", "pref": "新潟県", "name": "長岡店", "company": "有限会社高橋電光社", "cat": "両方NG", "raiten": "×", "shutcho": "×", "code": "FS012", "lat": 37.4454957, "lng": 138.8483129}, {"id": "s6771a08da", "group": "FS", "pref": "福井県", "name": "鯖江店", "company": "株式会社ミタムラ電機センター", "cat": "来店のみ", "raiten": "◯", "shutcho": "×", "code": "FS016", "lat": 35.9639986, "lng": 136.1813439}, {"id": "sc13eb5ca4", "group": "FS", "pref": "福井県", "name": "越前店", "company": "北川テレビ商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS017", "lat": 35.9051414, "lng": 136.1671783}, {"id": "s83ea39ffb", "group": "FS", "pref": "岐阜県", "name": "関店", "company": "BESTAD合同会社", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS006", "lat": 35.5057528, "lng": 136.9093871}, {"id": "s5fbf28ee9", "group": "FS", "pref": "愛知県", "name": "西尾店", "company": "鈴木自転車店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS054", "lat": 34.8071413, "lng": 137.0668925}, {"id": "sb743d6cd3", "group": "FS", "pref": "愛知県", "name": "豊川店", "company": "有限会社ファーミイ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS049", "lat": 34.8671278, "lng": 137.3087933}, {"id": "s108f13406", "group": "FS", "pref": "三重県", "name": "鈴鹿店", "company": "コバヤシデンキ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS047", "lat": 34.8712257, "lng": 136.5421037}, {"id": "sfb20516d8", "group": "FS", "pref": "兵庫県", "name": "明石店", "company": "志互都人", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS025", "lat": 34.678189, "lng": 134.9178185}, {"id": "s9b2a2a31b", "group": "FS", "pref": "和歌山県", "name": "海南店", "company": "ヤスダカメラ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS034", "lat": 34.1564839, "lng": 135.2130052}, {"id": "s3ac836a0a", "group": "FS", "pref": "鳥取県", "name": "倉吉店", "company": "リンリンサイクルたにもと", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS013", "lat": 35.4352773, "lng": 133.8446077}, {"id": "s786e86fff", "group": "FS", "pref": "島根県", "name": "出雲店", "company": "日之出自転車商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS019", "lat": 35.364224, "lng": 132.7758255}, {"id": "sa130590e2", "group": "FS", "pref": "山口県", "name": "下関店", "company": "カーマッチ山口下関店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS042", "lat": 34.0229768, "lng": 131.0053097}, {"id": "sdec8d7d0a", "group": "FS", "pref": "徳島県", "name": "徳島藍住店", "company": "みどり電機商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS020", "lat": 34.1241222, "lng": 134.5160655}, {"id": "s658843e94", "group": "FS", "pref": "福岡県", "name": "北九州小倉南店", "company": "ライダーズカフェ BLACK MAGICIAN", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS038", "lat": 33.8109924, "lng": 130.8390496}, {"id": "s57969a05f", "group": "FS", "pref": "福岡県", "name": "北九州門司店", "company": "いやしらぼ（プラザ祇園内）", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS055", "lat": 33.9485095, "lng": 130.9705266}, {"id": "s6f0d44a9f", "group": "FS", "pref": "福岡県", "name": "北九州若松店", "company": "【仮】FS北九州若松店（福岡県北九州市若松区）", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS051", "lat": 33.8913026, "lng": 130.7187613}, {"id": "sfa0c0ad49", "group": "FS", "pref": "福岡県", "name": "八幡西店", "company": "亀石工業", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS039", "lat": 33.7904132, "lng": 130.7179187}, {"id": "sad7350671", "group": "FS", "pref": "福岡県", "name": "行橋店", "company": "株式会社サニタリーワン", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS043", "lat": 33.6927425, "lng": 130.9774168}, {"id": "s61cabe1a2", "group": "FS", "pref": "福岡県", "name": "須恵店", "company": "オーバーラップ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS041", "lat": 33.6012656, "lng": 130.4957177}, {"id": "sca7912b87", "group": "FS", "pref": "福岡県", "name": "糸島店", "company": "弥生SAKURA", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS044", "lat": 33.4739545, "lng": 130.0420058}, {"id": "s4035e0d8b", "group": "FS", "pref": "福岡県", "name": "直方店", "company": "窪田建機株式会社", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS046", "lat": 33.7792596, "lng": 130.7053941}, {"id": "sff9922173", "group": "FS", "pref": "福岡県", "name": "岡垣店", "company": "平島塗装店", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS045", "lat": 33.8545009, "lng": 130.6214837}, {"id": "s760c9f513", "group": "FS", "pref": "福岡県", "name": "福岡博多店", "company": "博多チャリンコ倶楽部美野島店", "cat": "両方NG", "raiten": "×", "shutcho": "?", "code": "FS026", "lat": 33.5786575, "lng": 130.4145358}, {"id": "sea18f95c2", "group": "FS", "pref": "福岡県", "name": "福岡城南店", "company": "自転車工房神宮", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS027", "lat": 33.5528796, "lng": 130.3645825}, {"id": "s34a220b6b", "group": "FS", "pref": "福岡県", "name": "福岡南店", "company": "福岡イーデザイン", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS056", "lat": 33.5536112, "lng": 130.4041054}, {"id": "s7e3762e22", "group": "FS", "pref": "佐賀県", "name": "伊万里店", "company": "TATHUミ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS036", "lat": 33.3739597, "lng": 129.870868}, {"id": "s8bb69f89b", "group": "FS", "pref": "佐賀県", "name": "鹿島店", "company": "車輪屋千々岩自転車商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS010", "lat": 33.1092262, "lng": 130.0979106}, {"id": "sd29c3a143", "group": "FS", "pref": "佐賀県", "name": "嬉野店", "company": "宮﨑自転車商会", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS014", "lat": 33.1257923, "lng": 130.0622219}, {"id": "s79e29e5a1", "group": "FS", "pref": "大分県", "name": "宇佐店", "company": "山本サイクル", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS032", "lat": 33.5330178, "lng": 131.3238711}, {"id": "sd31c5f57a", "group": "FS", "pref": "沖縄県", "name": "沖縄店", "company": "サブナード", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS058", "lat": 26.3341115, "lng": 127.7972017}, {"id": "sf381cc0d7", "group": "RM", "pref": "北海道", "name": "札幌店", "company": "", "cat": "ショップ", "lat": 43.0488032, "lng": 141.3450507}, {"id": "sbc6cae072", "group": "RM", "pref": "北海道", "name": "旭川8条7丁目店", "company": "", "cat": "ショップ", "lat": 43.7734912, "lng": 142.3619903}, {"id": "s45b39596b", "group": "RM", "pref": "岩手県", "name": "岩手盛岡店", "company": "", "cat": "ショップ", "lat": 39.7088094, "lng": 141.1460466}, {"id": "s7883194c2", "group": "RM", "pref": "宮城県", "name": "仙台店", "company": "", "cat": "支店", "lat": 38.3261599, "lng": 140.8781266}, {"id": "s67fbb59ec", "group": "RM", "pref": "秋田県", "name": "秋田店", "company": "", "cat": "ショップ", "lat": 39.682708, "lng": 140.1259988}, {"id": "s6d0fb8c5c", "group": "RM", "pref": "福島県", "name": "福島郡山店", "company": "", "cat": "ショップ", "lat": 37.4061903, "lng": 140.3515128}, {"id": "sb4a675d6e", "group": "RM", "pref": "茨城県", "name": "水戸店", "company": "", "cat": "ショップ", "lat": 36.3662856, "lng": 140.4688816}, {"id": "s64aa2e9c2", "group": "RM", "pref": "栃木県", "name": "宇都宮店", "company": "", "cat": "ショップ", "lat": 36.5497133, "lng": 139.8799449}, {"id": "saa1f6fff8", "group": "RM", "pref": "埼玉県", "name": "岩槻店", "company": "", "cat": "支店", "lat": 35.9467854, "lng": 139.698464}, {"id": "se33177532", "group": "RM", "pref": "埼玉県", "name": "川口店", "company": "", "cat": "ショップ", "lat": 35.8327501, "lng": 139.6982541}, {"id": "s37d59d7fd", "group": "RM", "pref": "埼玉県", "name": "所沢店", "company": "", "cat": "支店", "lat": 35.8073896, "lng": 139.4514278}, {"id": "s6b5215b7c", "group": "RM", "pref": "千葉県", "name": "松戸店", "company": "", "cat": "ショップ", "lat": 35.7924872, "lng": 139.9058504}, {"id": "s32388a793", "group": "RM", "pref": "東京都", "name": "秋葉原駅前店", "company": "", "cat": "支店", "lat": 35.6974628, "lng": 139.7726856}, {"id": "s3761ab1f1", "group": "RM", "pref": "東京都", "name": "新宿本店", "company": "", "cat": "ショップ", "lat": 35.6933213, "lng": 139.6993669}, {"id": "s0aa9d2c5d", "group": "RM", "pref": "東京都", "name": "品川店", "company": "", "cat": "ショップ", "lat": 35.6026632, "lng": 139.7317834}, {"id": "s271eb1ca2", "group": "RM", "pref": "東京都", "name": "世田谷店｜千歳船橋駅前", "company": "", "cat": "ショップ", "lat": 35.6479962, "lng": 139.625365}, {"id": "saca354da3", "group": "RM", "pref": "東京都", "name": "渋谷店", "company": "", "cat": "ショップ", "lat": 35.6558565, "lng": 139.6968016}, {"id": "s39da9c9c4", "group": "RM", "pref": "東京都", "name": "渋谷道玄坂店", "company": "", "cat": "ショップ", "lat": 35.6591614, "lng": 139.6992274}, {"id": "s8b6d699ca", "group": "RM", "pref": "東京都", "name": "池袋本店", "company": "", "cat": "本社", "lat": 35.7305848, "lng": 139.7067365}, {"id": "se999fa890", "group": "RM", "pref": "東京都", "name": "大塚店", "company": "", "cat": "支店", "lat": 35.7379731, "lng": 139.7239678}, {"id": "s13c2f62f6", "group": "RM", "pref": "東京都", "name": "板橋店", "company": "", "cat": "ショップ", "lat": 35.7778933, "lng": 139.6472598}, {"id": "s23c20fe53", "group": "RM", "pref": "東京都", "name": "西八王子店", "company": "", "cat": "支店", "lat": 35.6597823, "lng": 139.3158601}, {"id": "s209e4cdbe", "group": "RM", "pref": "神奈川県", "name": "横浜店", "company": "", "cat": "支店", "lat": 35.4454486, "lng": 139.563266}, {"id": "s6248dff12", "group": "RM", "pref": "富山県", "name": "富山店", "company": "", "cat": "ショップ", "lat": 36.6610981, "lng": 137.202416}, {"id": "sd01d22ee1", "group": "RM", "pref": "石川県", "name": "金沢店", "company": "", "cat": "ショップ", "lat": 36.5664991, "lng": 136.6209088}, {"id": "sf2bc46564", "group": "RM", "pref": "山梨県", "name": "山梨甲府店", "company": "", "cat": "ショップ", "lat": 35.6371352, "lng": 138.5671327}, {"id": "sa603bc81c", "group": "RM", "pref": "長野県", "name": "長野店", "company": "", "cat": "ショップ", "lat": 36.6305137, "lng": 138.182741}, {"id": "s69f21c887", "group": "RM", "pref": "岐阜県", "name": "岐阜店", "company": "", "cat": "ショップ", "lat": 35.4029466, "lng": 136.7496617}, {"id": "sb91d49c46", "group": "RM", "pref": "静岡県", "name": "静岡店", "company": "", "cat": "ショップ", "lat": 34.9701587, "lng": 138.3747276}, {"id": "s6aed0025f", "group": "RM", "pref": "愛知県", "name": "名古屋店", "company": "", "cat": "支店", "lat": 35.1702165, "lng": 137.0142399}, {"id": "s7a415e72e", "group": "RM", "pref": "三重県", "name": "四日市店", "company": "", "cat": "ショップ", "lat": 34.9652967, "lng": 136.611913}, {"id": "s82741c594", "group": "RM", "pref": "京都府", "name": "京都店", "company": "", "cat": "支店", "lat": 34.9300405, "lng": 135.7515378}, {"id": "s3ecc85c52", "group": "RM", "pref": "大阪府", "name": "吹田店", "company": "", "cat": "ショップ", "lat": 34.7639896, "lng": 135.5039649}, {"id": "s6fe361a28", "group": "RM", "pref": "兵庫県", "name": "三宮店", "company": "", "cat": "ショップ", "lat": 34.6918409, "lng": 135.19109}, {"id": "sf613fbb07", "group": "RM", "pref": "岡山県", "name": "岡山店", "company": "", "cat": "支店", "lat": 34.6565213, "lng": 133.9305264}, {"id": "s2e6fb7798", "group": "RM", "pref": "広島県", "name": "広島店", "company": "", "cat": "支店", "lat": 34.3953923, "lng": 132.4867342}, {"id": "s6952b71ec", "group": "RM", "pref": "香川県", "name": "高松店", "company": "", "cat": "ショップ", "lat": 34.3336879, "lng": 134.081965}, {"id": "s68dc3166b", "group": "RM", "pref": "愛媛県", "name": "松山店", "company": "", "cat": "ショップ", "lat": 33.8608744, "lng": 132.7593896}, {"id": "s3289045d3", "group": "RM", "pref": "高知県", "name": "高知店", "company": "", "cat": "ショップ", "lat": 33.5656833, "lng": 133.5465181}, {"id": "s268eacfca", "group": "RM", "pref": "熊本県", "name": "熊本店", "company": "", "cat": "支店", "lat": 32.8090466, "lng": 130.7326301}, {"id": "sb01d3fd6f", "group": "RM", "pref": "鹿児島", "name": "鹿児島店", "company": "", "cat": "ショップ", "lat": 31.5408368, "lng": 130.5381902}, {"id": "s56e55c476", "group": "FS", "pref": "北海道", "name": "札幌白石店", "company": "(株)オートショップパートナー", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS004", "lat": 43.0794041, "lng": 141.4467543}, {"id": "sf45484412", "group": "FS", "pref": "長野県", "name": "塩尻店", "company": "ノムラデンキ", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS057", "lat": 36.1180125, "lng": 137.9550255}, {"id": "s6aad1e3a8", "group": "FS", "pref": "岐阜県", "name": "岐阜飛騨店", "company": "エルックきょうしん", "cat": "来店のみ", "raiten": "◯", "shutcho": "?", "code": "FS052", "lat": 36.2299493, "lng": 137.1870839}, {"id": "s354112cab", "group": "FS", "pref": "愛媛県", "name": "今治店", "company": "浅海設備工業（株）", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS040", "lat": 34.0603489, "lng": 133.0083374}, {"id": "sb2d06325b", "group": "FS", "pref": "沖縄県", "name": "うるま店", "company": "La Neige", "cat": "両方OK", "raiten": "◯", "shutcho": "◯", "code": "FS050", "lat": 26.430227, "lng": 127.8285219}];
 const SUPABASE_URL='https://prldqlylkqrbwduybcpw.supabase.co';
+const SUPABASE_KEY='sb_publishable_YQFRvwddrR0_8Bgmn2EZ_g_zNOHZ74V';
 const PHOTO_BUCKET='store-photos';
 function photoUrl(id){return SUPABASE_URL+'/storage/v1/object/public/'+PHOTO_BUCKET+'/'+id+'.jpg';}
 const CATS = {
@@ -67,10 +99,9 @@ const CATS = {
   'ショップ':{color:'#2e7d32', group:'自社のお店（RM）'},
   '両方OK':  {color:'#1565c0', group:'提携先のお店（FS）'},
   '来店のみ':{color:'#f4b400', group:'提携先のお店（FS）'},
-  '両方NG':  {color:'#c62828', group:'提携先のお店（FS）'},
-  '取引合意':{color:'#ffffff', group:'提携先のお店（FS）'}
+  '両方NG':  {color:'#c62828', group:'提携先のお店（FS）'}
 };
-const CAT_ORDER = ['本社','支店','ショップ','両方OK','来店のみ','両方NG','取引合意'];
+const CAT_ORDER = ['本社','支店','ショップ','両方OK','来店のみ','両方NG'];
 const STROKE='#2b2b2b';
 function enc(svg){return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);}
 function wrap(w,h,inner){return '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">'+inner+'</svg>';}
@@ -110,7 +141,7 @@ function initMap(){
   document.getElementById('total').textContent='全 '+STORES.length+' 店舗';
 }
 function infoHTML(s){
-  var c=CATS[s.cat]||{color:'#888'}; var light=(s.cat==='取引合意'); var meta='';
+  var c=CATS[s.cat]||{color:'#888'}; var light=false; var meta='';
   if(s.group==='FS'){
     meta='<div class="iw-meta">来店買取：'+esc(s.raiten)+'　／　出張所：'+esc(s.shutcho)+'</div>';
     if(s.code) meta+='<div class="iw-code">'+esc(s.code)+'</div>';
@@ -121,16 +152,13 @@ function infoHTML(s){
     +(s.company?'<div class="iw-co">'+esc(s.company)+'</div>':'')+meta+photo+'</div>';
 }
 function buildLegend(){
-  var counts={}; CAT_ORDER.forEach(function(c){counts[c]=0;});
-  STORES.forEach(function(s){counts[s.cat]=(counts[s.cat]||0)+1;});
+  var counts={}; CAT_ORDER.forEach(function(c){counts[c]=(markersByCat[c]||[]).length;});
   var groups=['自社のお店（RM）','提携先のお店（FS）'];
   var html='<h2>凡例（クリックで表示の切替）</h2>';
   groups.forEach(function(g){
     html+='<div class="grp"><div class="gl">'+g+'</div>';
     CAT_ORDER.filter(function(c){return CATS[c].group===g;}).forEach(function(c){
-      var cnt=counts[c]||0;
-      var note=(c==='取引合意'&&cnt===0)?' <span style="color:#b9b2a0;font-size:10.5px;">（連動待ち）</span>':'';
-      html+='<div class="leg" data-cat="'+c+'"><img class="sw" src="'+enc(shapeSVG(c,CATS[c].color))+'"><span class="nm">'+c+note+'</span><span class="ct">'+cnt+'</span></div>';
+      html+='<div class="leg" data-cat="'+c+'"><img class="sw" src="'+enc(shapeSVG(c,CATS[c].color))+'"><span class="nm">'+c+'</span><span class="ct">'+(counts[c]||0)+'</span></div>';
     });
     html+='</div>';
   });
@@ -147,7 +175,35 @@ function gmapsError(){
   document.getElementById('errmsg').innerHTML='<b>地図を読み込めませんでした。</b><br>APIキーの設定（Maps JavaScript API の有効化、サイトの制限）をご確認ください。';
 }
 window.gm_authFailure=gmapsError;
+
+/* ===== ログイン制御（チーム専用） ===== */
+let sb=null, mapsReady=false, appShown=false, started=false;
+function onMapsReady(){ mapsReady=true; maybeStart(); }
+function maybeStart(){ if(mapsReady && appShown && !started){ started=true; initMap(); } }
+function showApp(){ document.getElementById('login-overlay').classList.add('hidden'); appShown=true; maybeStart(); }
+function showLogin(){ document.getElementById('login-overlay').classList.remove('hidden'); }
+async function doLogin(){
+  var email=(document.getElementById('login-email').value||'').trim();
+  var pass=document.getElementById('login-pass').value||'';
+  var errEl=document.getElementById('login-error'); errEl.textContent='';
+  if(!email||!pass){ errEl.textContent='メールとパスワードを入れてください'; return; }
+  var btn=document.getElementById('login-btn'); btn.disabled=true; btn.textContent='ログイン中…';
+  var res=await sb.auth.signInWithPassword({email:email,password:pass});
+  btn.disabled=false; btn.textContent='ログイン';
+  if(res.error){ errEl.textContent='ログインできませんでした（メール・パスワードをご確認ください）'; return; }
+  document.getElementById('login-pass').value=''; showApp();
+}
+window.addEventListener('DOMContentLoaded', async function(){
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  document.getElementById('login-btn').addEventListener('click', doLogin);
+  document.getElementById('login-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  document.getElementById('logout-btn').addEventListener('click', async function(){ await sb.auth.signOut(); location.reload(); });
+  try{
+    var s=await sb.auth.getSession();
+    if(s && s.data && s.data.session){ showApp(); } else { showLogin(); }
+  }catch(e){ showLogin(); }
+});
 </script>
-<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQZ0VifKMGOsahGQgPv02fvlCZusCABk8&callback=initMap&loading=async" onerror="gmapsError()"></script>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQZ0VifKMGOsahGQgPv02fvlCZusCABk8&callback=onMapsReady&loading=async" onerror="gmapsError()"></script>
 </body>
 </html>
