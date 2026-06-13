@@ -116,8 +116,6 @@
   </header>
   <div id="toolbar">
     <input id="q" type="text" placeholder="🔍 店名・都道府県・会社名で検索（Enterで地図ジャンプ）">
-    <button class="chip" id="chip-raiten">🏬 来店買取OK</button>
-    <button class="chip" id="chip-shutcho">🚚 出張対応OK</button>
     <span id="hits"></span>
   </div>
   <div id="wrap">
@@ -126,14 +124,6 @@
     <div class="panel" id="routepanel">
       <h2 id="route-h">🚚 出張買取ルート検索</h2>
       <div class="rbody">
-        <label>🏠 お客様宅を見る（住所だけで確認）</label>
-        <div class="rhome">
-          <input id="h-addr" type="text" placeholder="例：東京都豊島区西池袋◯◯">
-          <button id="h-go" type="button">表示</button>
-        </div>
-        <div class="rhint">表示後、左上の「航空写真」で建物や駐車スペースを確認できます</div>
-        <div class="rsep"></div>
-        <div class="rhint">地図の店をクリック→「🚚 出発地にする」でも設定できます</div>
         <label>出発地（バイヤーの現在地・店など）</label>
         <input id="r-from" type="text" placeholder="例：東京都板橋区◯◯（直前のお宅）">
         <label>行き先（上から順に回ります）</label>
@@ -142,6 +132,13 @@
         <label class="rchk"><input type="checkbox" id="r-etc" checked> ETC料金で高速代を計算</label>
         <div class="rbtns"><button id="r-go">ルート表示</button><button id="r-clear">クリア</button></div>
         <div id="r-result"></div>
+        <div class="rsep"></div>
+        <label>🏠 お客様宅を見る（住所だけで確認）</label>
+        <div class="rhome">
+          <input id="h-addr" type="text" placeholder="例：東京都豊島区西池袋◯◯">
+          <button id="h-go" type="button">表示</button>
+        </div>
+        <div class="rhint">表示後、左上の「航空写真」で建物や駐車スペースを確認できます</div>
       </div>
     </div>
     <div id="err"><div class="box" id="errmsg"></div></div>
@@ -219,8 +216,6 @@ function initMap(){
   loadFuelSettings();
   document.getElementById('q').addEventListener('input',applyFilter);
   document.getElementById('q').addEventListener('keydown',function(e){ if(e.key==='Enter') zoomToHits(); });
-  document.getElementById('chip-raiten').addEventListener('click',function(){fRaiten=!fRaiten;this.classList.toggle('on',fRaiten);applyFilter();});
-  document.getElementById('chip-shutcho').addEventListener('click',function(){fShutcho=!fShutcho;this.classList.toggle('on',fShutcho);applyFilter();});
   enablePanelDrag();
   document.getElementById('r-go').addEventListener('click',runRoute);
   document.getElementById('r-clear').addEventListener('click',function(){
@@ -304,11 +299,11 @@ function infoHTML(s){
     if(s.annai_memo) line('🧭 案内：'+esc(s.annai_memo));
   }
   var photo='<img class="iw-photo" src="'+photoUrl(s.photo_id)+'" onerror="this.style.display=\'none\'" alt="">';
-  var route='<a class="iw-route" target="_blank" href="'+mapsLink(s)+'">🧭 ここへの道順</a>';
+  var svBtn='<button class="iw-origin" style="margin-left:0;" onclick="enterStreetView('+s.lat+','+s.lng+')">👤 店の前に立つ</button>';
   var originBtn='<button class="iw-origin" onclick="setRouteOriginStore(\''+s.id+'\')">🚚 出発地にする</button>';
   return '<div class="iw"><span class="iw-cat" style="background:'+c.color+'">'+esc(s.cat)+'</span>'
     +'<div class="iw-name">'+esc(s.name)+'</div><div class="iw-pref">'+region+'</div>'
-    +rows+photo+route+originBtn+'</div>';
+    +rows+photo+svBtn+originBtn+'</div>';
 }
 function flagInfoHTML(p,cat){
   var d=CATS[cat]; var label=(cat==='架電開店')?'新店オープン':'取引合意';
