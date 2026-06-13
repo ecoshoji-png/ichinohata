@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>店マスター管理</title>
+<style>
+  :root{--ink:#1b2333;--teal:#0b7a8c;--teal-dark:#086374;--vermilion:#c0392b;--cream:#f7f4ec;--line:#e3ddcf;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;min-height:100%;font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;color:var(--ink);background:#f4f6f8;}
+  header{background:var(--teal);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+  header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.04em;}
+  header .spacer{margin-left:auto;}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px;}
+
+  /* 合言葉ゲート */
+  #gate{position:fixed;inset:0;background:linear-gradient(160deg,#0b7a8c,#064a55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+  #gate.hidden{display:none;}
+  .gate-card{background:#fff;border-radius:16px;padding:30px 28px;width:340px;max-width:100%;box-shadow:0 12px 44px rgba(0,0,0,.35);}
+  .gate-logo{font-weight:700;font-size:20px;color:var(--ink);}
+  .gate-sub{color:#8a8372;font-size:13px;margin:6px 0 18px;}
+  #gate input{width:100%;font-size:14px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-family:inherit;}
+  .gate-btn{width:100%;margin-top:18px;padding:12px;font-size:15px;font-weight:700;background:var(--teal);color:#fff;border:none;border-radius:9px;cursor:pointer;}
+  .gate-btn:hover{background:var(--teal-dark);}
+  .gate-error{color:var(--vermilion);font-size:13px;margin-top:10px;min-height:18px;}
+
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+  .toolbar input.search{flex:1;min-width:220px;max-width:420px;font-size:14px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-family:inherit;}
+  .toolbar select{font-size:14px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-family:inherit;background:#fff;}
+  .btn{border:none;border-radius:9px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-primary:hover{background:var(--teal-dark);}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:#5b6671;}
+  .btn-ghost:hover{background:#f3f0e8;}
+  .count{font-size:13px;color:#8a8372;margin-left:auto;}
+
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  th,td{text-align:left;padding:10px 12px;font-size:13.5px;border-bottom:1px solid #eee;}
+  th{background:#f0ede6;color:#6b6456;font-weight:700;font-size:12px;letter-spacing:.04em;}
+  tr:hover td{background:#f7fafb;}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff;}
+  .badge-rm{background:#6b3fa0;}
+  .badge-fs{background:#1565c0;}
+  .badge-off{background:#aaa;}
+  .row-off td{opacity:.5;}
+  .link{color:var(--teal-dark);font-weight:700;cursor:pointer;text-decoration:underline;}
+  .empty{padding:40px;text-align:center;color:#9a927f;}
+
+  /* 編集モーダル */
+  #modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-start;justify-content:center;z-index:900;padding:20px;overflow:auto;}
+  #modal.show{display:flex;}
+  .modal-card{background:#fff;border-radius:14px;width:680px;max-width:100%;padding:0;box-shadow:0 16px 50px rgba(0,0,0,.3);margin:auto;}
+  .modal-head{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;}
+  .modal-head h2{font-size:17px;margin:0;}
+  .modal-head .x{margin-left:auto;border:none;background:none;font-size:22px;cursor:pointer;color:#999;}
+  .modal-body{padding:18px 22px;}
+  .modal-foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;}
+  .modal-foot .spacer{margin-left:auto;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;}
+  .field{display:flex;flex-direction:column;}
+  .field.full{grid-column:1 / -1;}
+  .field label{font-size:12px;color:#7a7568;font-weight:600;margin-bottom:4px;}
+  .field input,.field select,.field textarea{font-size:14px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:inherit;}
+  .field textarea{resize:vertical;min-height:54px;}
+  .sec{font-size:12px;font-weight:700;color:var(--teal-dark);letter-spacing:.05em;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px dashed var(--line);grid-column:1 / -1;}
+  .hint{font-size:11px;color:#9a927f;margin-top:3px;}
+  .geo-row{display:flex;gap:8px;align-items:flex-end;}
+  .geo-row .field{flex:1;}
+  .msg{font-size:13px;min-height:18px;}
+  .msg.ok{color:var(--teal-dark);}
+  .msg.ng{color:var(--vermilion);}
+  .btn-danger{background:#fff;border:1px solid var(--vermilion);color:var(--vermilion);}
+  .btn-danger:hover{background:#fdecea;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">🏪 店マスター管理</div>
+    <p class="gate-sub">担当者用の合言葉を入力してください</p>
+    <input id="gate-pass" type="password" placeholder="合言葉" autocomplete="off">
+    <button class="gate-btn" id="gate-btn">入る</button>
+    <div id="gate-error" class="gate-error"></div>
+  </div>
+</div>
+
+<header>
+  <span style="font-size:20px;">🏪</span>
+  <h1>店マスター管理</h1>
+  <span class="spacer"></span>
+  <button class="btn btn-primary" id="add-btn">＋ 新しい店を追加</button>
+</header>
+
+<div class="wrap">
+  <div class="toolbar">
+    <input class="search" id="q" type="text" placeholder="🔍 店名・県・市区町村・事業者名で検索">
+    <select id="filter-group">
+      <option value="">すべて</option>
+      <option value="RM">自社店（RM）</option>
+      <option value="FS">提携店（FS）</option>
+    </select>
+    <select id="filter-active">
+      <option value="">表示・非表示すべて</option>
+      <option value="on">表示中のみ</option>
+      <option value="off">非表示のみ</option>
+    </select>
+    <span class="count" id="count"></span>
+  </div>
+  <table>
+    <thead>
+      <tr><th>区分</th><th>店種別</th><th>店名</th><th>県・市区町村</th><th>事業者名</th><th>状態</th><th></th></tr>
+    </thead>
+    <tbody id="list"></tbody>
+  </table>
+  <div class="empty" id="empty" style="display:none;">該当する店がありません</div>
+</div>
+
+<!-- 編集／追加モーダル -->
+<div id="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="modal-title">店を編集</h2>
+      <button class="x" id="modal-x">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid">
+        <div class="sec">基本</div>
+        <div class="field">
+          <label>区分</label>
+          <select id="f-group_type">
+            <option value="RM">自社店（RM）</option>
+            <option value="FS">提携店（FS）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>店種別</label>
+          <select id="f-cat">
+            <option value="本社">本社</option>
+            <option value="支店">支店</option>
+            <option value="ショップ">ショップ</option>
+            <option value="両方OK">両方OK</option>
+            <option value="来店のみ">来店のみ</option>
+            <option value="両方NG">両方NG</option>
+          </select>
+        </div>
+        <div class="field full"><label>店名</label><input id="f-name" type="text"></div>
+
+        <div class="sec">場所</div>
+        <div class="field"><label>都道府県</label><input id="f-pref" type="text"></div>
+        <div class="field"><label>市区町村</label><input id="f-city" type="text"></div>
+        <div class="field"><label>郵便番号</label><input id="f-zip" type="text" placeholder="064-0808"></div>
+        <div class="field"><label>　</label><div></div></div>
+        <div class="field full"><label>住所</label><input id="f-address" type="text" placeholder="都道府県から入れると地図が正確になります"></div>
+        <div class="field"><label>緯度（lat）</label><input id="f-lat" type="text"></div>
+        <div class="field"><label>経度（lng）</label><input id="f-lng" type="text"></div>
+        <div class="field full">
+          <button class="btn btn-ghost" id="geo-btn" type="button">📍 住所から地図の座標を自動取得</button>
+          <div class="hint">住所を入れてこのボタンを押すと、緯度・経度が自動で入ります</div>
+          <div class="msg" id="geo-msg"></div>
+        </div>
+
+        <div class="sec">買取・駐車場</div>
+        <div class="field"><label>来店買取（◯／×／△）</label><input id="f-raiten" type="text"></div>
+        <div class="field"><label>出張所（◯／×／△）</label><input id="f-shutcho" type="text"></div>
+        <div class="field"><label>駐車場（有／無）</label><input id="f-parking" type="text"></div>
+        <div class="field"><label>　</label><div></div></div>
+        <div class="field full"><label>🅿️ 駐車場メモ（番号・場所など）</label><textarea id="f-parking_memo" placeholder="例：建物の裏、第2駐車場の3〜5番"></textarea></div>
+        <div class="field full"><label>🧭 道案内メモ（目印・入口など）</label><textarea id="f-annai_memo" placeholder="例：国道沿い、青い看板が目印。1階がコンビニのビルの2階"></textarea></div>
+
+        <div class="sec">提携店の情報（FS）</div>
+        <div class="field"><label>事業者店名</label><input id="f-company" type="text"></div>
+        <div class="field"><label>担当者名</label><input id="f-tanto" type="text"></div>
+        <div class="field"><label>連絡先電話</label><input id="f-tel" type="text"></div>
+        <div class="field"><label>伝票連絡</label><input id="f-denpyo" type="text" placeholder="LINE / FAX / メール など"></div>
+        <div class="field"><label>対応可能日時</label><input id="f-taiou_nichiji" type="text"></div>
+        <div class="field"><label>定休日</label><input id="f-teikyubi" type="text"></div>
+        <div class="field"><label>営業時間</label><input id="f-eigyo_jikan" type="text"></div>
+        <div class="field"><label>アポ担当（開拓担当）</label><input id="f-apo_tanto" type="text"></div>
+        <div class="field"><label>旗設置日</label><input id="f-flag_date" type="text" placeholder="2025/9/29"></div>
+        <div class="field"><label>WEB公開日</label><input id="f-web_date" type="text" placeholder="2025/10/8"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="toggle-active-btn" type="button">この店を非表示にする</button>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost" id="cancel-btn" type="button">キャンセル</button>
+      <button class="btn btn-primary" id="save-btn" type="button">保存</button>
+    </div>
+    <div style="padding:0 22px 16px;"><div class="msg" id="save-msg"></div></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQZ0VifKMGOsahGQgPv02fvlCZusCABk8&loading=async"></script>
+<script>
+const SUPABASE_URL='https://prldqlylkqrbwduybcpw.supabase.co';
+const SUPABASE_KEY='sb_publishable_YQFRvwddrR0_8Bgmn2EZ_g_zNOHZ74V';
+const ADMIN_PASS='master';  // 担当者用の合言葉（変えたいときはこの文字を書き換える）
+let sb=null;
+let ALL=[];            // 全店データ
+let editingId=null;    // 編集中の店のid（新規追加のときはnull）
+
+// 編集フォームの項目（id属性のサフィックス＝テーブルの列名）
+const FIELDS=['group_type','cat','name','pref','city','zip','address','lat','lng',
+  'raiten','shutcho','parking','parking_memo','annai_memo',
+  'company','tanto','tel','denpyo','taiou_nichiji','teikyubi','eigyo_jikan',
+  'apo_tanto','flag_date','web_date'];
+
+function esc(t){return (t||'').toString().replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]);});}
+
+/* ===== 合言葉ゲート ===== */
+function openGate(){
+  var pass=document.getElementById('gate-pass').value||'';
+  var err=document.getElementById('gate-error'); err.textContent='';
+  if(pass!==ADMIN_PASS){ err.textContent='合言葉が違います'; return; }
+  document.getElementById('gate').classList.add('hidden');
+  loadAll();
+}
+
+/* ===== データ読み込み ===== */
+async function loadAll(){
+  try{
+    var res=await sb.from('stores').select('*').order('group_type',{ascending:true}).order('id',{ascending:true});
+    if(res.error){ alert('読み込みに失敗しました：'+res.error.message); return; }
+    ALL=res.data||[];
+    render();
+  }catch(e){ alert('読み込みエラー：'+e.message); }
+}
+
+/* ===== 一覧表示 ===== */
+function render(){
+  var q=(document.getElementById('q').value||'').trim().toLowerCase();
+  var fg=document.getElementById('filter-group').value;
+  var fa=document.getElementById('filter-active').value;
+  var terms=q.split(/\s+/).filter(Boolean);
+  var rows=ALL.filter(function(s){
+    if(fg && s.group_type!==fg) return false;
+    if(fa==='on' && !s.active) return false;
+    if(fa==='off' && s.active) return false;
+    if(terms.length){
+      var hay=((s.name||'')+' '+(s.pref||'')+' '+(s.city||'')+' '+(s.company||'')+' '+(s.tanto||'')).toLowerCase();
+      for(var i=0;i<terms.length;i++){ if(hay.indexOf(terms[i])<0) return false; }
+    }
+    return true;
+  });
+  var tb=document.getElementById('list'); tb.innerHTML='';
+  rows.forEach(function(s){
+    var tr=document.createElement('tr');
+    if(!s.active) tr.className='row-off';
+    var gBadge=s.group_type==='RM'?'<span class="badge badge-rm">自社</span>':'<span class="badge badge-fs">提携</span>';
+    var aBadge=s.active?'<span style="color:#2e7d32;font-weight:700;">表示中</span>':'<span class="badge badge-off">非表示</span>';
+    tr.innerHTML='<td>'+gBadge+'</td>'
+      +'<td>'+esc(s.cat)+'</td>'
+      +'<td><span class="link" data-id="'+s.id+'">'+esc(s.name)+'</span></td>'
+      +'<td>'+esc([s.pref,s.city].filter(Boolean).join(' '))+'</td>'
+      +'<td>'+esc(s.company||'')+'</td>'
+      +'<td>'+aBadge+'</td>'
+      +'<td><button class="btn btn-ghost" data-edit="'+s.id+'">編集</button></td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('count').textContent=rows.length+' / '+ALL.length+' 店';
+  document.getElementById('empty').style.display=rows.length?'none':'block';
+  tb.querySelectorAll('[data-id],[data-edit]').forEach(function(el){
+    el.addEventListener('click',function(){
+      var id=this.getAttribute('data-id')||this.getAttribute('data-edit');
+      openEdit(Number(id));
+    });
+  });
+}
+
+/* ===== モーダル：開く ===== */
+function openEdit(id){
+  editingId=id;
+  var s = id ? ALL.find(function(x){return x.id===id;}) : {};
+  document.getElementById('modal-title').textContent = id ? '店を編集' : '新しい店を追加';
+  FIELDS.forEach(function(f){
+    var el=document.getElementById('f-'+f);
+    if(el) el.value = (s && s[f]!=null) ? s[f] : '';
+  });
+  if(!id){ document.getElementById('f-group_type').value='FS'; document.getElementById('f-cat').value='両方OK'; }
+  // 非表示ボタンの文言（既存店だけ出す）
+  var tBtn=document.getElementById('toggle-active-btn');
+  if(id){
+    tBtn.style.display='inline-block';
+    tBtn.textContent = (s.active===false) ? 'この店を表示に戻す' : 'この店を非表示にする';
+  } else {
+    tBtn.style.display='none';
+  }
+  document.getElementById('geo-msg').textContent='';
+  document.getElementById('save-msg').textContent='';
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); editingId=null; }
+
+/* ===== 住所から座標を自動取得 ===== */
+function geocode(){
+  var addr=(document.getElementById('f-address').value||'').trim()
+    || [document.getElementById('f-pref').value,document.getElementById('f-city').value].filter(Boolean).join('');
+  var msg=document.getElementById('geo-msg');
+  if(!addr){ msg.className='msg ng'; msg.textContent='先に住所を入れてください'; return; }
+  msg.className='msg'; msg.textContent='取得中…';
+  try{
+    var geocoder=new google.maps.Geocoder();
+    geocoder.geocode({address:addr, region:'JP'}, function(results,status){
+      if(status==='OK' && results && results[0]){
+        var l=results[0].geometry.location;
+        document.getElementById('f-lat').value=l.lat();
+        document.getElementById('f-lng').value=l.lng();
+        msg.className='msg ok'; msg.textContent='✓ 座標を取得しました（'+l.lat().toFixed(6)+', '+l.lng().toFixed(6)+'）';
+      } else {
+        msg.className='msg ng'; msg.textContent='住所が見つかりませんでした。表記を見直してください';
+      }
+    });
+  }catch(e){ msg.className='msg ng'; msg.textContent='取得に失敗しました'; }
+}
+
+/* ===== 保存（追加・更新） ===== */
+async function save(){
+  var msg=document.getElementById('save-msg');
+  var data={};
+  FIELDS.forEach(function(f){
+    var el=document.getElementById('f-'+f);
+    var v=el?el.value.trim():'';
+    if(f==='lat'||f==='lng'){ data[f]= v===''?null:Number(v); }
+    else { data[f]= v===''?null:v; }
+  });
+  if(!data.name){ msg.className='msg ng'; msg.textContent='店名を入れてください'; return; }
+  if(!data.group_type||!data.cat){ msg.className='msg ng'; msg.textContent='区分と店種別を選んでください'; return; }
+  data.updated_at=new Date().toISOString();
+  var btn=document.getElementById('save-btn'); btn.disabled=true; btn.textContent='保存中…';
+  try{
+    var res;
+    if(editingId){
+      res=await sb.from('stores').update(data).eq('id', editingId);
+    } else {
+      data.active=true;
+      res=await sb.from('stores').insert(data);
+    }
+    if(res.error){ msg.className='msg ng'; msg.textContent='保存に失敗：'+res.error.message; }
+    else { msg.className='msg ok'; msg.textContent='✓ 保存しました'; await loadAll(); setTimeout(closeModal, 600); }
+  }catch(e){ msg.className='msg ng'; msg.textContent='保存エラー：'+e.message; }
+  finally{ btn.disabled=false; btn.textContent='保存'; }
+}
+
+/* ===== 表示／非表示の切替 ===== */
+async function toggleActive(){
+  if(!editingId) return;
+  var s=ALL.find(function(x){return x.id===editingId;});
+  var next = !(s && s.active);
+  var word = next ? '表示に戻す' : '非表示にする';
+  if(!confirm('この店を'+word+'？\n（データは消えません。地図での表示が切り替わります）')) return;
+  var msg=document.getElementById('save-msg');
+  try{
+    var res=await sb.from('stores').update({active:next, updated_at:new Date().toISOString()}).eq('id', editingId);
+    if(res.error){ msg.className='msg ng'; msg.textContent='切替に失敗：'+res.error.message; }
+    else { await loadAll(); closeModal(); }
+  }catch(e){ msg.className='msg ng'; msg.textContent='エラー：'+e.message; }
+}
+
+/* ===== 起動 ===== */
+window.addEventListener('DOMContentLoaded', function(){
+  sb=window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  document.getElementById('gate-btn').addEventListener('click', openGate);
+  document.getElementById('gate-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') openGate(); });
+  document.getElementById('q').addEventListener('input', render);
+  document.getElementById('filter-group').addEventListener('change', render);
+  document.getElementById('filter-active').addEventListener('change', render);
+  document.getElementById('add-btn').addEventListener('click', function(){ openEdit(null); });
+  document.getElementById('modal-x').addEventListener('click', closeModal);
+  document.getElementById('cancel-btn').addEventListener('click', closeModal);
+  document.getElementById('save-btn').addEventListener('click', save);
+  document.getElementById('geo-btn').addEventListener('click', geocode);
+  document.getElementById('toggle-active-btn').addEventListener('click', toggleActive);
+});
+</script>
+</body>
+</html>
