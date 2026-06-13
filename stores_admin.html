@@ -183,6 +183,7 @@
     </div>
     <div class="modal-foot">
       <button class="btn btn-danger" id="toggle-active-btn" type="button">この店を非表示にする</button>
+      <button class="btn btn-danger" id="delete-btn" type="button">完全に削除</button>
       <span class="spacer"></span>
       <button class="btn btn-ghost" id="cancel-btn" type="button">キャンセル</button>
       <button class="btn btn-primary" id="save-btn" type="button">保存</button>
@@ -281,11 +282,14 @@ function openEdit(id){
   if(!id){ document.getElementById('f-group_type').value='FS'; document.getElementById('f-cat').value='両方OK'; }
   // 非表示ボタンの文言（既存店だけ出す）
   var tBtn=document.getElementById('toggle-active-btn');
+  var dBtn=document.getElementById('delete-btn');
   if(id){
     tBtn.style.display='inline-block';
     tBtn.textContent = (s.active===false) ? 'この店を表示に戻す' : 'この店を非表示にする';
+    dBtn.style.display='inline-block';
   } else {
     tBtn.style.display='none';
+    dBtn.style.display='none';
   }
   document.getElementById('geo-msg').textContent='';
   document.getElementById('save-msg').textContent='';
@@ -358,6 +362,20 @@ async function toggleActive(){
   }catch(e){ msg.className='msg ng'; msg.textContent='エラー：'+e.message; }
 }
 
+/* ===== 完全に削除（戻せない） ===== */
+async function deleteStore(){
+  if(!editingId) return;
+  var s=ALL.find(function(x){return x.id===editingId;});
+  var nm=s?s.name:'';
+  if(!confirm('「'+nm+'」を完全に削除します。\nこの操作は元に戻せません。本当に削除しますか？')) return;
+  var msg=document.getElementById('save-msg');
+  try{
+    var res=await sb.from('stores').delete().eq('id', editingId);
+    if(res.error){ msg.className='msg ng'; msg.textContent='削除に失敗：'+res.error.message; }
+    else { await loadAll(); closeModal(); }
+  }catch(e){ msg.className='msg ng'; msg.textContent='エラー：'+e.message; }
+}
+
 /* ===== 起動 ===== */
 window.addEventListener('DOMContentLoaded', function(){
   sb=window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -372,6 +390,7 @@ window.addEventListener('DOMContentLoaded', function(){
   document.getElementById('save-btn').addEventListener('click', save);
   document.getElementById('geo-btn').addEventListener('click', geocode);
   document.getElementById('toggle-active-btn').addEventListener('click', toggleActive);
+  document.getElementById('delete-btn').addEventListener('click', deleteStore);
 });
 </script>
 </body>
