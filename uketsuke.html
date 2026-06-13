@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>一の旗 インバウンドマップ</title>
+<title>リサマイマップ</title>
 <style>
   :root{--ink:#1b2333;--teal:#0b7a8c;--teal-dark:#086374;--vermilion:#c0392b;--cream:#f7f4ec;--line:#e3ddcf;}
   *{box-sizing:border-box;}
@@ -59,7 +59,8 @@
   .leg .nm{flex:1;}
   .leg .ct{color:#8a8372;font-variant-numeric:tabular-nums;}
   #routepanel{left:12px;bottom:38px;width:256px;padding:12px;z-index:3;font-size:12.5px;}
-  #routepanel h2{font-size:12.5px;margin:0 0 4px;color:#086374;font-weight:700;cursor:pointer;user-select:none;}
+  #routepanel h2{font-size:12.5px;margin:0 0 4px;color:#086374;font-weight:700;cursor:move;user-select:none;}
+  #routepanel h2::before{content:"⠿ ";color:#b9b3a4;font-size:13px;}
   #routepanel .rhint{font-size:10.5px;color:#9a927f;margin:0 0 4px;line-height:1.5;}
   #routepanel.min .rbody{display:none;}
   #routepanel label{display:block;font-size:11px;color:#7a7568;font-weight:600;margin:7px 0 3px;}
@@ -76,6 +77,7 @@
   #r-add{border:1px dashed var(--teal);background:#fff;color:var(--teal-dark);border-radius:8px;padding:6px 0;width:100%;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;}
   #r-add:hover{background:#e8f4f6;}
   #r-result .leg-line{font-size:12px;font-weight:600;color:#3f5a60;line-height:1.7;}
+  #r-result .leg-cost{font-size:11px;color:#8a8372;line-height:1.5;margin-bottom:2px;}
   #r-result .total-line{margin-top:3px;border-top:1px dashed var(--line);padding-top:4px;}
   #routepanel .rbtns button{flex:1;border:none;border-radius:8px;padding:8px 0;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
   #r-go{background:var(--teal);color:#fff;}
@@ -92,7 +94,7 @@
 
 <div id="login-overlay">
   <div class="login-card">
-    <div class="login-logo">📞 一の旗 インバウンドマップ</div>
+    <div class="login-logo">📞 リサマイマップ</div>
     <p class="login-sub">社内（インバウンド）専用・ログインしてください</p>
     <label class="login-label">メールアドレス</label>
     <input id="login-email" type="email" autocomplete="username" placeholder="staff@example.com">
@@ -106,7 +108,7 @@
 <div id="app">
   <header>
     <span class="mark">📞</span>
-    <h1>一の旗 インバウンドマップ</h1>
+    <h1>リサマイマップ</h1>
     <span class="spacer"></span>
     <button class="navbtn" id="logout-btn">ログアウト</button>
   </header>
@@ -199,6 +201,7 @@ let routeOrigin=null, routePolys=[], routeMarkers=[];
 function initMap(){
   map=new google.maps.Map(document.getElementById('map'),{center:{lat:37.8,lng:137.5},zoom:5,mapTypeControl:true,streetViewControl:true,fullscreenControl:true,gestureHandling:'greedy'});
   pano=map.getStreetView();
+  pano.setOptions({addressControl:false, fullscreenControl:false, motionTracking:false, motionTrackingControl:false, enableCloseButton:true});
   info=new google.maps.InfoWindow();
   var bounds=new google.maps.LatLngBounds();
   STORES.forEach(function(s){
@@ -216,7 +219,7 @@ function initMap(){
   document.getElementById('q').addEventListener('keydown',function(e){ if(e.key==='Enter') zoomToHits(); });
   document.getElementById('chip-raiten').addEventListener('click',function(){fRaiten=!fRaiten;this.classList.toggle('on',fRaiten);applyFilter();});
   document.getElementById('chip-shutcho').addEventListener('click',function(){fShutcho=!fShutcho;this.classList.toggle('on',fShutcho);applyFilter();});
-  document.getElementById('route-h').addEventListener('click',function(){ document.getElementById('routepanel').classList.toggle('min'); });
+  enablePanelDrag();
   document.getElementById('r-go').addEventListener('click',runRoute);
   document.getElementById('r-clear').addEventListener('click',function(){
     clearRouteDrawing();
@@ -380,8 +383,45 @@ async function loadFuelSettings(){
   }catch(e){}
 }
 function clearHomeMarker(){ if(homeMarker){ homeMarker.setMap(null); homeMarker=null; } }
+function enablePanelDrag(){
+  var panel=document.getElementById('routepanel');
+  var handle=document.getElementById('route-h');
+  var wrap=document.getElementById('wrap');
+  var dragging=false, moved=false, sx=0, sy=0, ox=0, oy=0;
+  handle.addEventListener('mousedown', function(e){
+    dragging=true; moved=false;
+    var pr=panel.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
+    ox=pr.left-wr.left; oy=pr.top-wr.top;
+    sx=e.clientX; sy=e.clientY;
+    // 位置をtop/leftで固定する（bottom指定を解除）
+    panel.style.left=ox+'px'; panel.style.top=oy+'px'; panel.style.right='auto'; panel.style.bottom='auto';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    var dx=e.clientX-sx, dy=e.clientY-sy;
+    if(Math.abs(dx)>3||Math.abs(dy)>3) moved=true;
+    var wr=wrap.getBoundingClientRect();
+    var nx=Math.max(0, Math.min(ox+dx, wr.width-panel.offsetWidth));
+    var ny=Math.max(0, Math.min(oy+dy, wr.height-panel.offsetHeight));
+    panel.style.left=nx+'px'; panel.style.top=ny+'px';
+  });
+  document.addEventListener('mouseup', function(){
+    if(dragging && !moved){ panel.classList.toggle('min'); } // 動かさずクリック＝折りたたみ
+    dragging=false;
+  });
+}
 function enterStreetView(lat,lng){
   if(!pano) return;
+  pano.setOptions({
+    addressControl:false,        // 「◯◯店／Googleマップで見る」のラベルを消す
+    linksControl:true,           // 道なりの移動矢印は残す
+    panControl:true,             // 視点回転は残す
+    enableCloseButton:true,      // 「×」で地図に戻れる
+    fullscreenControl:false,
+    motionTracking:false,
+    motionTrackingControl:false
+  });
   pano.setPosition({lat:lat, lng:lng});
   pano.setPov({heading:0, pitch:0});
   pano.setVisible(true);
@@ -472,7 +512,18 @@ async function runRoute(){
       if(pos){ routeMarkers.push(mkNumPoint(pos, i+1)); }
     }
     var b=new google.maps.LatLngBounds(); path.forEach(function(pt){ b.extend(pt); }); map.fitBounds(b);
-    // 区間ごとの時間・距離（取得できた場合）
+    var isEtc=document.getElementById('r-etc').checked;
+    // 1つの脚(leg)から高速代を取り出すヘルパー
+    function legToll(lg){
+      try{
+        var ta=lg && lg.travelAdvisory; if(!ta) return null;
+        var ti=ta.tollInfo; if(!ti) return 0;
+        var pr=ti.estimatedPrice||ti.estimatedPrices;
+        if(pr && pr.length){ var p=pr[0]; return Math.round(Number(p.units||0)+(p.nanos? p.nanos/1e9 : 0)); }
+        return null; // 高速ありだが金額不明
+      }catch(e){ return null; }
+    }
+    // 区間ごとの時間・距離・コスト（複数行き先のとき）
     var html='';
     var legs=r.legs;
     if(legs && legs.length===dests.length && dests.length>1){
@@ -482,13 +533,23 @@ async function runRoute(){
         if(lg && typeof lg.distanceMeters==='number'){ seg+=(seg?'（':'')+(lg.distanceMeters/1000).toFixed(1)+'km'+(seg?'）':''); }
         var fromLabel=(j===0)?'出発':(j+'件目');
         html+='<div class="leg-line">'+fromLabel+' → '+(j+1)+'件目　'+(seg||'—')+'</div>';
+        // この区間のコスト内訳
+        var costParts=[];
+        if(lg && typeof lg.distanceMeters==='number' && fuelKmpl>0){
+          var lf=Math.round((lg.distanceMeters/1000)/fuelKmpl*fuelYen);
+          costParts.push('⛽￥'+lf.toLocaleString());
+        }
+        var lt=legToll(lg);
+        if(lt!==null){ if(lt>0) costParts.push('💴￥'+lt.toLocaleString()); }
+        else { costParts.push('💴(不明)'); }
+        if(costParts.length){ html+='<div class="leg-cost">　└ '+costParts.join('　')+'</div>'; }
       }
     }
     var total='';
     if(typeof r.durationMillis==='number'){ total+='🚗 合計 約'+fmtDur(Math.round(r.durationMillis/60000)); }
     if(typeof r.distanceMeters==='number'){ total+=(total?'（':'')+(r.distanceMeters/1000).toFixed(1)+'km'+(total?'）':''); }
     if(total){ html+='<div class="total-line">'+total+'</div>'; }
-    // 高速料金（取得できた場合）
+    // 全体の高速料金（取得できた場合）
     var tollYen=null;
     try{
       var ta=r.travelAdvisory;
@@ -498,7 +559,7 @@ async function runRoute(){
         if(prices && prices.length){
           var p0=prices[0];
           tollYen=Math.round(Number(p0.units||0)+(p0.nanos? p0.nanos/1e9 : 0));
-          html+='<div class="leg-line">💴 高速代 約￥'+tollYen.toLocaleString()+(document.getElementById('r-etc').checked?'（ETC）':'（現金）')+'</div>';
+          html+='<div class="leg-line">💴 高速代 約￥'+tollYen.toLocaleString()+(isEtc?'（ETC）':'（現金）')+'</div>';
         } else if(ti){
           html+='<div class="leg-line">💴 高速道路を通ります（料金を取得できませんでした）</div>';
         } else {
