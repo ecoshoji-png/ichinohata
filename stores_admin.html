@@ -125,6 +125,18 @@
     </div>
     <div class="modal-body">
       <div class="grid">
+        <div class="sec">写真</div>
+        <div class="field full">
+          <div id="photo-wrap" style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
+            <img id="photo-preview" alt="" style="display:none;max-width:200px;width:100%;border-radius:8px;border:1px solid var(--line);">
+            <div style="flex:1;min-width:180px;">
+              <input id="photo-file" type="file" accept="image/*" style="font-size:13px;">
+              <div class="hint">店の外観や入口の写真を選ぶと、地図の小窓に表示されます（選ぶと自動でアップロードします）</div>
+              <div class="msg" id="photo-msg"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="sec">基本</div>
         <div class="field">
           <label>区分</label>
@@ -210,6 +222,12 @@ const FIELDS=['group_type','cat','name','pref','city','zip','address','lat','lng
 
 function esc(t){return (t||'').toString().replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]);});}
 
+const PHOTO_BUCKET='store-photos';
+// 写真URL（bust=trueで更新後にキャッシュを避ける）
+function photoUrl(pid, bust){ return SUPABASE_URL+'/storage/v1/object/public/'+PHOTO_BUCKET+'/'+pid+'.jpg'+(bust?('?t='+Date.now()):''); }
+// この店の写真ファイル名に使うID（photo_idがあればそれ、無ければ s+id）
+function photoIdOf(s){ return (s && s.photo_id) ? s.photo_id : ('s'+(s?s.id:'')); }
+
 /* ===== 合言葉ゲート ===== */
 function openGate(){
   var pass=document.getElementById('gate-pass').value||'';
@@ -293,6 +311,22 @@ function openEdit(id){
   }
   document.getElementById('geo-msg').textContent='';
   document.getElementById('save-msg').textContent='';
+  // 写真プレビュー
+  var pmsg=document.getElementById('photo-msg'); pmsg.textContent=''; pmsg.className='msg';
+  var pf=document.getElementById('photo-file'); pf.value='';
+  var prev=document.getElementById('photo-preview');
+  if(id){
+    var pid=photoIdOf(s);
+    prev.style.display='block';
+    prev.src=photoUrl(pid, true);
+    prev.onerror=function(){ prev.style.display='none'; };
+    pf.disabled=false;
+  } else {
+    // 新規追加：保存前は写真を上げられない（IDが無いため）
+    prev.style.display='none';
+    pf.disabled=true;
+    pmsg.className='msg'; pmsg.textContent='※ 先に店を保存すると、写真を追加できます';
+  }
   document.getElementById('modal').classList.add('show');
 }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); editingId=null; }
@@ -376,6 +410,31 @@ async function deleteStore(){
   }catch(e){ msg.className='msg ng'; msg.textContent='エラー：'+e.message; }
 }
 
+/* ===== 写真アップロード（選んだら自動で実行） ===== */
+async function uploadPhoto(){
+  if(!editingId) return;
+  var pf=document.getElementById('photo-file');
+  var file=pf.files && pf.files[0];
+  if(!file) return;
+  var pmsg=document.getElementById('photo-msg');
+  var s=ALL.find(function(x){return x.id===editingId;});
+  var pid=photoIdOf(s);  // 既存はphoto_id、無ければ s+id
+  pmsg.className='msg'; pmsg.textContent='アップロード中…';
+  try{
+    var res=await sb.storage.from(PHOTO_BUCKET).upload(pid+'.jpg', file, {upsert:true, contentType:file.type||'image/jpeg'});
+    if(res.error){ pmsg.className='msg ng'; pmsg.textContent='アップロード失敗：'+res.error.message; return; }
+    // photo_idがテーブルに無ければ、今決めたpidを保存しておく
+    if(!s.photo_id){
+      await sb.from('stores').update({photo_id:pid, updated_at:new Date().toISOString()}).eq('id', editingId);
+      s.photo_id=pid;
+    }
+    // プレビュー更新（キャッシュ避け）
+    var prev=document.getElementById('photo-preview');
+    prev.style.display='block'; prev.src=photoUrl(pid, true);
+    pmsg.className='msg ok'; pmsg.textContent='✓ 写真をアップロードしました';
+  }catch(e){ pmsg.className='msg ng'; pmsg.textContent='エラー：'+e.message; }
+}
+
 /* ===== 起動 ===== */
 window.addEventListener('DOMContentLoaded', function(){
   sb=window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -391,6 +450,7 @@ window.addEventListener('DOMContentLoaded', function(){
   document.getElementById('geo-btn').addEventListener('click', geocode);
   document.getElementById('toggle-active-btn').addEventListener('click', toggleActive);
   document.getElementById('delete-btn').addEventListener('click', deleteStore);
+  document.getElementById('photo-file').addEventListener('change', uploadPhoto);
 });
 </script>
 </body>
