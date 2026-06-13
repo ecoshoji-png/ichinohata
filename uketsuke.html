@@ -259,7 +259,7 @@ function applyFilter(){
 }
 function infoHTML(s){
   var c=CATS[s.cat]||{color:'#888'};
-  var region=[s.pref,s.city].filter(Boolean).join(' ');
+  var region=s.address ? esc(s.address) : esc([s.pref,s.city].filter(Boolean).join(' '));
   var rows='';
   function line(html){ rows+='<div class="iw-meta">'+html+'</div>'; }
   if(s.group==='FS'){
@@ -297,7 +297,7 @@ function infoHTML(s){
   var route='<a class="iw-route" target="_blank" href="'+mapsLink(s)+'">🧭 ここへの道順</a>';
   var originBtn='<button class="iw-origin" onclick="setRouteOriginStore(\''+s.id+'\')">🚚 出発地にする</button>';
   return '<div class="iw"><span class="iw-cat" style="background:'+c.color+'">'+esc(s.cat)+'</span>'
-    +'<div class="iw-name">'+esc(s.name)+'</div><div class="iw-pref">'+esc(region)+'</div>'
+    +'<div class="iw-name">'+esc(s.name)+'</div><div class="iw-pref">'+region+'</div>'
     +rows+photo+route+originBtn+'</div>';
 }
 function flagInfoHTML(p,cat){
