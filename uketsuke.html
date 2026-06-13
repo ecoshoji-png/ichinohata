@@ -65,6 +65,18 @@
   #routepanel label{display:block;font-size:11px;color:#7a7568;font-weight:600;margin:7px 0 3px;}
   #routepanel input{width:100%;font-size:13px;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-family:inherit;}
   #routepanel .rbtns{display:flex;gap:7px;margin-top:10px;}
+  .rhome{display:flex;gap:6px;}
+  .rhome input{flex:1;min-width:0;}
+  .rhome button{flex:none;border:none;border-radius:7px;padding:0 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--teal);color:#fff;}
+  .rhome button:hover{background:var(--teal-dark);}
+  .rsep{border-top:1px dashed var(--line);margin:10px 0 4px;}
+  .rchk{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#7a7568;margin-top:8px;cursor:pointer;}
+  #routepanel input[type=checkbox]{width:auto;margin:0;}
+  #r-dests input{margin-bottom:5px;}
+  #r-add{border:1px dashed var(--teal);background:#fff;color:var(--teal-dark);border-radius:8px;padding:6px 0;width:100%;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+  #r-add:hover{background:#e8f4f6;}
+  #r-result .leg-line{font-size:12px;font-weight:600;color:#3f5a60;line-height:1.7;}
+  #r-result .total-line{margin-top:3px;border-top:1px dashed var(--line);padding-top:4px;}
   #routepanel .rbtns button{flex:1;border:none;border-radius:8px;padding:8px 0;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
   #r-go{background:var(--teal);color:#fff;}
   #r-go:hover{background:var(--teal-dark);}
@@ -110,11 +122,20 @@
     <div class="panel" id="routepanel">
       <h2 id="route-h">🚚 出張買取ルート検索</h2>
       <div class="rbody">
+        <label>🏠 お客様宅を見る（住所だけで確認）</label>
+        <div class="rhome">
+          <input id="h-addr" type="text" placeholder="例：東京都豊島区西池袋◯◯">
+          <button id="h-go" type="button">表示</button>
+        </div>
+        <div class="rhint">表示後、左上の「航空写真」で建物や駐車スペースを確認できます</div>
+        <div class="rsep"></div>
         <div class="rhint">地図の店をクリック→「🚚 出発地にする」でも設定できます</div>
         <label>出発地（バイヤーの現在地・店など）</label>
-        <input id="r-from" type="text" placeholder="例：東京都板橋区◯◯（1件目のお宅）">
-        <label>目的地（お客様の住所）</label>
-        <input id="r-to" type="text" placeholder="例：埼玉県川口市◯◯">
+        <input id="r-from" type="text" placeholder="例：東京都板橋区◯◯（直前のお宅）">
+        <label>行き先（上から順に回ります）</label>
+        <div id="r-dests"></div>
+        <button id="r-add" type="button">＋ 行き先を追加</button>
+        <label class="rchk"><input type="checkbox" id="r-etc" checked> ETC料金で高速代を計算</label>
         <div class="rbtns"><button id="r-go">ルート表示</button><button id="r-clear">クリア</button></div>
         <div id="r-result"></div>
       </div>
@@ -176,7 +197,8 @@ let fRaiten=false, fShutcho=false;
 let shown={}; CAT_ORDER.forEach(function(c){shown[c]=true;});
 let routeOrigin=null, routePolys=[], routeMarkers=[];
 function initMap(){
-  map=new google.maps.Map(document.getElementById('map'),{center:{lat:37.8,lng:137.5},zoom:5,mapTypeControl:true,streetViewControl:false,fullscreenControl:true,gestureHandling:'greedy'});
+  map=new google.maps.Map(document.getElementById('map'),{center:{lat:37.8,lng:137.5},zoom:5,mapTypeControl:true,streetViewControl:true,fullscreenControl:true,gestureHandling:'greedy'});
+  pano=map.getStreetView();
   info=new google.maps.InfoWindow();
   var bounds=new google.maps.LatLngBounds();
   STORES.forEach(function(s){
@@ -189,15 +211,26 @@ function initMap(){
   buildLegend();
   applyFilter();
   loadFlags();
+  loadFuelSettings();
   document.getElementById('q').addEventListener('input',applyFilter);
   document.getElementById('q').addEventListener('keydown',function(e){ if(e.key==='Enter') zoomToHits(); });
   document.getElementById('chip-raiten').addEventListener('click',function(){fRaiten=!fRaiten;this.classList.toggle('on',fRaiten);applyFilter();});
   document.getElementById('chip-shutcho').addEventListener('click',function(){fShutcho=!fShutcho;this.classList.toggle('on',fShutcho);applyFilter();});
   document.getElementById('route-h').addEventListener('click',function(){ document.getElementById('routepanel').classList.toggle('min'); });
   document.getElementById('r-go').addEventListener('click',runRoute);
-  document.getElementById('r-clear').addEventListener('click',function(){ clearRouteDrawing(); document.getElementById('r-result').innerHTML=''; });
+  document.getElementById('r-clear').addEventListener('click',function(){
+    clearRouteDrawing();
+    clearHomeMarker();
+    document.getElementById('r-result').innerHTML='';
+    document.getElementById('h-addr').value='';
+    document.getElementById('r-dests').innerHTML='';
+    addDestRow();
+  });
   document.getElementById('r-from').addEventListener('input',function(){ routeOrigin=null; });
-  document.getElementById('r-to').addEventListener('keydown',function(e){ if(e.key==='Enter') runRoute(); });
+  document.getElementById('r-add').addEventListener('click',function(){ var el=addDestRow(); if(el) el.focus(); });
+  document.getElementById('h-go').addEventListener('click',showHome);
+  document.getElementById('h-addr').addEventListener('keydown',function(e){ if(e.key==='Enter') showHome(); });
+  addDestRow();
 }
 function matches(s,q){
   if(fRaiten){ if(s.group==='FS' && s.raiten!=='◯') return false; }
@@ -333,22 +366,95 @@ function fmtDur(min){
   if(min>=60){ var h=Math.floor(min/60), mm=min%60; return h+'時間'+(mm? mm+'分':''); }
   return min+'分';
 }
+let homeMarker=null;
+let fuelKmpl=7.5, fuelYen=160;
+let pano=null;
+async function loadFuelSettings(){
+  if(!sb) return;
+  try{
+    var res=await sb.from('ichinohata_settings').select('fuel_kmpl,fuel_yen').eq('id',1).single();
+    if(!res.error && res.data){
+      if(res.data.fuel_kmpl>0) fuelKmpl=Number(res.data.fuel_kmpl);
+      if(res.data.fuel_yen>0)  fuelYen=Number(res.data.fuel_yen);
+    }
+  }catch(e){}
+}
+function clearHomeMarker(){ if(homeMarker){ homeMarker.setMap(null); homeMarker=null; } }
+function enterStreetView(lat,lng){
+  if(!pano) return;
+  pano.setPosition({lat:lat, lng:lng});
+  pano.setPov({heading:0, pitch:0});
+  pano.setVisible(true);
+}
+window.enterStreetView=enterStreetView;
+async function showHome(){
+  var addr=(document.getElementById('h-addr').value||'').trim();
+  var out=document.getElementById('r-result');
+  if(!addr){ out.innerHTML='<span class="sub">お客様の住所を入れてください</span>'; return; }
+  var btn=document.getElementById('h-go'); btn.disabled=true; btn.textContent='…';
+  try{
+    var geocoder=new google.maps.Geocoder();
+    var pos=await geocodeOne(geocoder, addr);
+    if(!pos){ out.innerHTML='<span class="sub">住所が見つかりませんでした。表記を見直してください</span>'; return; }
+    clearHomeMarker();
+    homeMarker=mkRoutePoint(pos,'🏠');
+    homeMarker._pos=pos;
+    map.setCenter(pos); map.setZoom(17);
+    out.innerHTML='🏠 お客様宅を表示しました<div class="sub">「航空写真」で建物・駐車スペースを確認できます</div>'
+      +'<button class="iw-origin" style="margin-left:0;margin-top:8px;" onclick="enterStreetView('+pos.lat+','+pos.lng+')">👤 この場所に立つ（ストリートビュー）</button>';
+  }finally{
+    btn.disabled=false; btn.textContent='表示';
+  }
+}
+function addDestRow(val){
+  var box=document.getElementById('r-dests');
+  if(box.children.length>=8) return null;
+  var inp=document.createElement('input');
+  inp.type='text';
+  inp.placeholder='例：埼玉県川口市◯◯（'+(box.children.length+1)+'件目）';
+  if(val) inp.value=val;
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter') runRoute(); });
+  box.appendChild(inp);
+  return inp;
+}
+function mkNumPoint(pos,num){
+  return new google.maps.Marker({position:pos, map:map, zIndex:9999,
+    icon:{path:google.maps.SymbolPath.CIRCLE, scale:13, fillColor:'#0b7a8c', fillOpacity:1, strokeColor:'#ffffff', strokeWeight:2.5},
+    label:{text:String(num), color:'#ffffff', fontSize:'13px', fontWeight:'700'}});
+}
 async function runRoute(){
   var fromTxt=(document.getElementById('r-from').value||'').trim();
-  var toTxt=(document.getElementById('r-to').value||'').trim();
+  var dests=[];
+  document.querySelectorAll('#r-dests input').forEach(function(el){
+    var v=(el.value||'').trim(); if(v) dests.push(v);
+  });
   var out=document.getElementById('r-result');
-  if((!routeOrigin && !fromTxt) || !toTxt){ out.innerHTML='<span class="sub">出発地と目的地を入れてください</span>'; return; }
+  if((!routeOrigin && !fromTxt) || !dests.length){ out.innerHTML='<span class="sub">出発地と行き先を入れてください</span>'; return; }
   var btn=document.getElementById('r-go'); btn.disabled=true; btn.textContent='計算中…';
   out.innerHTML='<span class="sub">ルートを計算しています…</span>';
   clearRouteDrawing();
   try{
     var lib=await google.maps.importLibrary('routes');
     var origin=routeOrigin? routeOrigin : fromTxt;
+    var dest=dests[dests.length-1];
+    var mids=dests.slice(0,-1);
+    var common={origin:origin, destination:dest, travelMode:'DRIVING', region:'jp'};
+    if(mids.length) common.intermediates=mids;
+    var mods={vehicleInfo:{emissionType:'GASOLINE'}};
+    if(document.getElementById('r-etc').checked){ mods.tollPasses=['JP_ETC','JP_ETC2']; }
     var res;
     try{
-      res=await lib.Route.computeRoutes({origin:origin, destination:toTxt, travelMode:'DRIVING', region:'jp', fields:['path','distanceMeters','durationMillis']});
+      res=await lib.Route.computeRoutes(Object.assign({}, common, {
+        extraComputations:['TOLLS'],
+        routeModifiers:mods,
+        fields:['path','distanceMeters','durationMillis','legs','travelAdvisory']
+      }));
     }catch(e1){
-      res=await lib.Route.computeRoutes({origin:origin, destination:toTxt, travelMode:'DRIVING', region:'jp', fields:['path']});
+      try{
+        res=await lib.Route.computeRoutes(Object.assign({}, common, {fields:['path','distanceMeters','durationMillis','legs']}));
+      }catch(e2){
+        res=await lib.Route.computeRoutes(Object.assign({}, common, {fields:['path']}));
+      }
     }
     var routes=res && res.routes;
     if(!routes || !routes.length || !routes[0].path || !routes[0].path.length){
@@ -359,12 +465,59 @@ async function runRoute(){
     routePolys.forEach(function(p){ p.setMap(map); });
     var path=r.path;
     routeMarkers.push(mkRoutePoint(path[0],'🚚'));
-    routeMarkers.push(mkRoutePoint(path[path.length-1],'🏠'));
+    // 各行き先に番号ピン（住所をジオコーディングして立てる）
+    var geocoder=new google.maps.Geocoder();
+    for(var i=0;i<dests.length;i++){
+      var pos=await geocodeOne(geocoder, dests[i]);
+      if(pos){ routeMarkers.push(mkNumPoint(pos, i+1)); }
+    }
     var b=new google.maps.LatLngBounds(); path.forEach(function(pt){ b.extend(pt); }); map.fitBounds(b);
-    var txt='';
-    if(typeof r.durationMillis==='number'){ txt+='🚗 約'+fmtDur(Math.round(r.durationMillis/60000)); }
-    if(typeof r.distanceMeters==='number'){ txt+=(txt?'（':'')+(r.distanceMeters/1000).toFixed(1)+'km'+(txt?'）':''); }
-    out.innerHTML = txt ? txt+'<div class="sub">※交通状況により前後します</div>' : 'ルートを表示しました';
+    // 区間ごとの時間・距離（取得できた場合）
+    var html='';
+    var legs=r.legs;
+    if(legs && legs.length===dests.length && dests.length>1){
+      for(var j=0;j<legs.length;j++){
+        var lg=legs[j], seg='';
+        if(lg && typeof lg.durationMillis==='number'){ seg+='約'+fmtDur(Math.round(lg.durationMillis/60000)); }
+        if(lg && typeof lg.distanceMeters==='number'){ seg+=(seg?'（':'')+(lg.distanceMeters/1000).toFixed(1)+'km'+(seg?'）':''); }
+        var fromLabel=(j===0)?'出発':(j+'件目');
+        html+='<div class="leg-line">'+fromLabel+' → '+(j+1)+'件目　'+(seg||'—')+'</div>';
+      }
+    }
+    var total='';
+    if(typeof r.durationMillis==='number'){ total+='🚗 合計 約'+fmtDur(Math.round(r.durationMillis/60000)); }
+    if(typeof r.distanceMeters==='number'){ total+=(total?'（':'')+(r.distanceMeters/1000).toFixed(1)+'km'+(total?'）':''); }
+    if(total){ html+='<div class="total-line">'+total+'</div>'; }
+    // 高速料金（取得できた場合）
+    var tollYen=null;
+    try{
+      var ta=r.travelAdvisory;
+      if(ta){
+        var ti=ta.tollInfo;
+        var prices=ti? (ti.estimatedPrice||ti.estimatedPrices) : null;
+        if(prices && prices.length){
+          var p0=prices[0];
+          tollYen=Math.round(Number(p0.units||0)+(p0.nanos? p0.nanos/1e9 : 0));
+          html+='<div class="leg-line">💴 高速代 約￥'+tollYen.toLocaleString()+(document.getElementById('r-etc').checked?'（ETC）':'（現金）')+'</div>';
+        } else if(ti){
+          html+='<div class="leg-line">💴 高速道路を通ります（料金を取得できませんでした）</div>';
+        } else {
+          tollYen=0;
+          html+='<div class="leg-line">💴 高速代なし（一般道のみ）</div>';
+        }
+      }
+    }catch(eToll){}
+    // 燃料代（距離 ÷ 燃費 × 単価）とコスト合計
+    var fuelYenCost=null;
+    if(typeof r.distanceMeters==='number' && fuelKmpl>0){
+      fuelYenCost=Math.round((r.distanceMeters/1000)/fuelKmpl*fuelYen);
+      html+='<div class="leg-line">⛽ 燃料代 約￥'+fuelYenCost.toLocaleString()+'<span class="sub">（'+fuelKmpl+'km/L・'+fuelYen+'円/L）</span></div>';
+    }
+    if(fuelYenCost!==null && tollYen!==null){
+      var grand=fuelYenCost+tollYen;
+      html+='<div class="total-line">💰 コスト合計 約￥'+grand.toLocaleString()+'</div>';
+    }
+    out.innerHTML = html ? html+'<div class="sub">※移動時間のみ。買取の滞在時間は含みません</div>' : 'ルートを表示しました';
   }catch(e){
     out.innerHTML='<span class="sub">ルートを計算できませんでした。住所の表記、またはGoogle Cloudの「Routes API」の有効化をご確認ください</span>';
   }finally{
