@@ -132,6 +132,7 @@
             <div style="flex:1;min-width:180px;">
               <input id="photo-file" type="file" accept="image/*" style="font-size:13px;">
               <div class="hint">店の外観や入口の写真を選ぶと、地図の小窓に表示されます（選ぶと自動でアップロードします）</div>
+              <button class="btn btn-danger" id="photo-del-btn" type="button" style="margin-top:8px;display:none;">🗑 この写真を削除</button>
               <div class="msg" id="photo-msg"></div>
             </div>
           </div>
@@ -315,11 +316,14 @@ function openEdit(id){
   var pmsg=document.getElementById('photo-msg'); pmsg.textContent=''; pmsg.className='msg';
   var pf=document.getElementById('photo-file'); pf.value='';
   var prev=document.getElementById('photo-preview');
+  var delBtn=document.getElementById('photo-del-btn');
+  delBtn.style.display='none';
   if(id){
     var pid=photoIdOf(s);
     prev.style.display='block';
     prev.src=photoUrl(pid, true);
-    prev.onerror=function(){ prev.style.display='none'; };
+    prev.onerror=function(){ prev.style.display='none'; delBtn.style.display='none'; };
+    prev.onload=function(){ delBtn.style.display='inline-block'; };
     pf.disabled=false;
   } else {
     // 新規追加：保存前は写真を上げられない（IDが無いため）
@@ -431,7 +435,27 @@ async function uploadPhoto(){
     // プレビュー更新（キャッシュ避け）
     var prev=document.getElementById('photo-preview');
     prev.style.display='block'; prev.src=photoUrl(pid, true);
+    document.getElementById('photo-del-btn').style.display='inline-block';
     pmsg.className='msg ok'; pmsg.textContent='✓ 写真をアップロードしました';
+  }catch(e){ pmsg.className='msg ng'; pmsg.textContent='エラー：'+e.message; }
+}
+
+/* ===== 写真を削除 ===== */
+async function deletePhoto(){
+  if(!editingId) return;
+  var s=ALL.find(function(x){return x.id===editingId;});
+  var pid=photoIdOf(s);
+  if(!confirm('この店の写真を削除しますか？\n（写真だけ消えます。店の情報は残ります）')) return;
+  var pmsg=document.getElementById('photo-msg');
+  pmsg.className='msg'; pmsg.textContent='削除中…';
+  try{
+    var res=await sb.storage.from(PHOTO_BUCKET).remove([pid+'.jpg']);
+    if(res.error){ pmsg.className='msg ng'; pmsg.textContent='削除に失敗：'+res.error.message; return; }
+    var prev=document.getElementById('photo-preview');
+    prev.style.display='none'; prev.src='';
+    document.getElementById('photo-del-btn').style.display='none';
+    document.getElementById('photo-file').value='';
+    pmsg.className='msg ok'; pmsg.textContent='✓ 写真を削除しました';
   }catch(e){ pmsg.className='msg ng'; pmsg.textContent='エラー：'+e.message; }
 }
 
@@ -451,6 +475,7 @@ window.addEventListener('DOMContentLoaded', function(){
   document.getElementById('toggle-active-btn').addEventListener('click', toggleActive);
   document.getElementById('delete-btn').addEventListener('click', deleteStore);
   document.getElementById('photo-file').addEventListener('change', uploadPhoto);
+  document.getElementById('photo-del-btn').addEventListener('click', deletePhoto);
 });
 </script>
 </body>
