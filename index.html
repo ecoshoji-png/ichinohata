@@ -38,6 +38,11 @@
   .iw-pref{font-size:12px;color:#777;margin-bottom:3px;}
   .iw-co{font-size:13px;margin-top:2px;}
   .iw-meta{font-size:12px;color:#555;margin-top:5px;}
+  .iw-deeds{margin-top:9px;padding-top:7px;border-top:1px dashed #d8cfc0;}
+  .iw-deeds-h{font-size:11px;font-weight:700;color:#9a7b3f;letter-spacing:.06em;margin-bottom:4px;}
+  .iw-deed{font-size:12.5px;color:#2b2b2b;line-height:1.75;}
+  .iw-deed b{color:#b5532f;}
+  .iw-sub{font-size:11px;color:#999;}
   .iw-code{font-size:11px;color:#aaa;margin-top:2px;}
   .iw-photo{display:block;max-width:172px;width:100%;border-radius:6px;margin-top:8px;}
   #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;background:var(--cream);z-index:10;}
@@ -164,10 +169,21 @@ function infoHTML(s){
 function flagInfoHTML(p,cat){
   var d=CATS[cat]; var label=(cat==='架電開店')?'新店オープン':'取引合意';
   var region=[p.prefecture,p.city].filter(Boolean).join(' ');
+  // 「この旗の功績」を組み立てる（中身があるものだけ表示）
+  var deeds='';
+  function deed(html){ deeds+='<div class="iw-deed">'+html+'</div>'; }
+  if(p.referrer) deed('🤝 紹介：'+esc(p.referrer));
+  if(p.send_staff) deed('📞 資料請求・送付：<b>'+esc(p.send_staff)+'</b>'+(p.send_date?'<span class="iw-sub">（発送 '+esc(p.send_date)+'）</span>':''));
+  if(p.staff) deed('⚔️ アタック：'+esc(p.staff));
+  if(p.contract_staff) deed('✍️ 締結：<b>'+esc(p.contract_staff)+'</b>'+(p.contract_date?'<span class="iw-sub">（締結 '+esc(p.contract_date)+'）</span>':''));
+  if(p.flag_date) deed('🚩 旗の日：'+esc(p.flag_date));
+  if(p.open_date) deed('🎉 新店オープン：'+esc(p.open_date));
+  var deedBox = deeds ? '<div class="iw-deeds"><div class="iw-deeds-h">この旗の功績</div>'+deeds+'</div>' : '';
   return '<div class="iw"><span class="iw-cat" style="background:'+d.color+';color:#3a1a14;border:1px solid #2b2b2b">&#9730; '+esc(label)+'</span>'
     +'<div class="iw-name">'+esc(p.company||'（会社名なし）')+'</div>'
     +'<div class="iw-pref">'+esc(region)+'</div>'
-    +'<div class="iw-meta">状況：'+esc(p.status)+'</div></div>';
+    +'<div class="iw-meta">状況：'+esc(p.status)+'</div>'
+    +deedBox+'</div>';
 }
 function buildLegend(){
   var counts={}; CAT_ORDER.forEach(function(c){counts[c]=(markersByCat[c]||[]).length;});
@@ -200,7 +216,7 @@ function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
 async function loadFlags(){
   if(!sb) return;
   try{
-    var res = await sb.from('ichinohata').select('id,company,prefecture,city,address,status').in('status', FLAG_STATUSES);
+    var res = await sb.from('ichinohata').select('id,company,prefecture,city,address,status,referrer,staff,send_staff,send_date,contract_staff,contract_date,flag_date,open_date').in('status', FLAG_STATUSES);
     if(res.error || !res.data){ return; }
     var geocoder = new google.maps.Geocoder();
     for(var i=0;i<res.data.length;i++){
