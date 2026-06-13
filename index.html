@@ -103,15 +103,14 @@ const CATS = {
   '本社':    {color:'#6b3fa0', group:'自社のお店（RM）', shape:'castle-big', label:'本社'},
   '支店':    {color:'#1f3a6e', group:'自社のお店（RM）', shape:'castle',     label:'支店'},
   'ショップ':{color:'#2e7d32', group:'自社のお店（RM）', shape:'shop',       label:'ショップ'},
-  '両方OK':  {color:'#1565c0', group:'提携先のお店（FS）', shape:'pennant',   label:'両方OK'},
-  '来店のみ':{color:'#f4b400', group:'提携先のお店（FS）', shape:'pennant',   label:'来店のみ'},
-  '両方NG':  {color:'#c62828', group:'提携先のお店（FS）', shape:'pennant',   label:'両方NG'},
-  '架電合意':{color:'#e7a99e', group:'一の旗（架電連動）', shape:'nobori',    label:'取引合意（薄い旗）'},
-  '架電開店':{color:'#c0392b', group:'一の旗（架電連動）', shape:'nobori',    label:'新店オープン（朱の旗）'}
+  '両方OK':  {color:'#1565c0', group:'提携先のお店（FS）', shape:'nobori',   label:'両方OK'},
+  '来店のみ':{color:'#f4b400', group:'提携先のお店（FS）', shape:'nobori',   label:'来店のみ'},
+  '両方NG':  {color:'#c62828', group:'提携先のお店（FS）', shape:'nobori',   label:'両方NG'},
+  '架電合意':{color:'#8a8f98', group:'一の旗（架電連動）', shape:'nobori',    label:'取引合意（開店前）'}
 };
-const CAT_ORDER = ['本社','支店','ショップ','両方OK','来店のみ','両方NG','架電合意','架電開店'];
+const CAT_ORDER = ['本社','支店','ショップ','両方OK','来店のみ','両方NG','架電合意'];
 const GROUPS = ['自社のお店（RM）','提携先のお店（FS）','一の旗（架電連動）'];
-const FLAG_STATUSES = ['取引合意','書類準備中','締結','新設届出中','新店オープン'];
+const FLAG_STATUSES = ['取引合意','書類準備中','締結','新設届出中'];
 const STROKE='#2b2b2b';
 function enc(svg){return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);}
 function wrap(w,h,inner){return '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">'+inner+'</svg>';}
@@ -187,7 +186,7 @@ function infoHTML(s){
     +(s.company?'<div class="iw-co">'+esc(s.company)+'</div>':'')+meta+photo+'</div>';
 }
 function flagInfoHTML(p,cat){
-  var d=CATS[cat]; var label=(cat==='架電開店')?'新店オープン':'取引合意';
+  var d=CATS[cat]; var label='取引合意';
   var region=[p.prefecture,p.city].filter(Boolean).join(' ');
   // 「この旗の功績」を組み立てる（中身があるものだけ表示）
   var deeds='';
@@ -223,7 +222,7 @@ function buildLegend(){
     });
   });
 }
-function flagCat(status){ return status==='新店オープン' ? '架電開店' : '架電合意'; }
+function flagCat(status){ return '架電合意'; }
 function geocodeOne(geocoder, addr){
   return new Promise(function(resolve){
     geocoder.geocode({address:addr, region:'JP'}, function(results,status){
