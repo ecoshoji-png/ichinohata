@@ -185,7 +185,7 @@ function iconFor(cat){
   if(cat==='支店')    return {url:enc(wrap(30,38,castleInner(c))),   scaledSize:new google.maps.Size(30,38),anchor:new google.maps.Point(15,34)};
   if(cat==='ショップ')return {url:enc(wrap(30,38,shopInner(c))),     scaledSize:new google.maps.Size(30,38),anchor:new google.maps.Point(7,34)};
   if(cat==='架電合意') return {url:enc(wrap(28,40,noboriInner(c))),scaledSize:new google.maps.Size(31,44),anchor:new google.maps.Point(6.6,44)};
-  return {url:enc(wrap(30,38,pennantInner(c))),scaledSize:new google.maps.Size(30,38),anchor:new google.maps.Point(7,34)};
+  return {url:enc(wrap(28,40,noboriInner(c))),scaledSize:new google.maps.Size(31,44),anchor:new google.maps.Point(6.6,44)};
 }
 function esc(t){return (t||'').replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]);});}
 function mapsLink(s){
