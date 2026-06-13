@@ -25,10 +25,10 @@
   .iw{font-family:inherit;min-width:170px;padding:2px 2px 4px;}
   .iw-cat{display:inline-block;color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;margin-bottom:6px;margin-right:4px;}
   .iw-name{font-size:15px;font-weight:700;line-height:1.3;}
-  .iw-pref{font-size:12px;color:#777;margin-bottom:3px;}
+  .iw-pref{font-size:12px;color:#555;margin-bottom:3px;}
   .iw-co{font-size:13px;margin-top:2px;}
-  .iw-meta{font-size:12.5px;color:#444;margin-top:6px;line-height:1.7;}
-  .iw-bigmeta{font-size:14px;margin-top:7px;line-height:1.6;}
+  .iw-meta{font-size:13px;color:#1b2333;margin-top:6px;line-height:1.85;}
+  .iw-bigmeta{font-size:14.5px;color:#1b2333;margin-top:7px;line-height:1.6;font-weight:600;}
   .iw-bigmeta b{color:var(--teal-dark);}
   .iw-meta b{color:var(--teal-dark);}
   .iw-ng{color:#c0392b;}
@@ -268,7 +268,7 @@ function infoHTML(s){
     var rOK=(ok.indexOf((s.raiten||'').trim())>=0);
     var sOK=(ok.indexOf((s.shutcho||'').trim())>=0);
     var r=rOK?'<b>来店買取 ◯</b>':'<span class="iw-ng">来店買取 '+(esc(s.raiten)||'✕')+'</span>';
-    var sh=sOK?'<b>出張対応 ◯</b>':'<span class="iw-ng">出張対応 '+(esc(s.shutcho)||'✕')+'</span>';
+    var sh=sOK?'<b>出張所 ◯</b>':'<span class="iw-ng">出張所 '+(esc(s.shutcho)||'✕')+'</span>';
     rows+='<div class="iw-bigmeta">'+r+'　／　'+sh+'</div>';
     // ③ 電話番号（目立つ位置）
     if(s.tel) line('📞 <a href="tel:'+esc(s.tel.replace(/[^0-9+]/g,''))+'"><b>'+esc(s.tel)+'</b></a>');
@@ -293,7 +293,7 @@ function infoHTML(s){
     if(s.parking_memo) line('🅿️ '+esc(s.parking_memo));
     if(s.annai_memo) line('🧭 案内：'+esc(s.annai_memo));
   }
-  var photo='<img class="iw-photo" src="'+photoUrl(s.id)+'" onerror="this.style.display=\'none\'" alt="">';
+  var photo='<img class="iw-photo" src="'+photoUrl(s.photo_id)+'" onerror="this.style.display=\'none\'" alt="">';
   var route='<a class="iw-route" target="_blank" href="'+mapsLink(s)+'">🧭 ここへの道順</a>';
   var originBtn='<button class="iw-origin" onclick="setRouteOriginStore(\''+s.id+'\')">🚚 出発地にする</button>';
   return '<div class="iw"><span class="iw-cat" style="background:'+c.color+'">'+esc(s.cat)+'</span>'
@@ -629,8 +629,9 @@ async function loadStores(){
     // storesテーブルの列を、地図が使うキー名に合わせて変換
     STORES = res.data.map(function(r){
       return {
-        id:        's'+r.id,           // 写真ファイル名などで使うID（数字に接頭辞）
+        id:        's'+r.id,           // 内部用ID
         dbid:      r.id,               // テーブルの本当のID
+        photo_id:  r.photo_id || ('s'+r.id),  // 写真ファイル名用（旧ID）
         group:     r.group_type,       // 'RM' / 'FS'
         cat:       r.cat,
         name:      r.name,
