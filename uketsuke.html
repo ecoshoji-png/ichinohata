@@ -257,9 +257,19 @@ function applyFilter(){
   });
   document.getElementById('hits').textContent=n+' / '+STORES.length+' 店';
 }
+function buildAddress(s){
+  var pref=(s.pref||'').trim(), city=(s.city||'').trim(), addr=(s.address||'').trim();
+  if(!addr){ return esc([pref,city].filter(Boolean).join('')); }
+  // 住所が既に県名から始まっていれば、そのまま使う（自社店など）
+  if(pref && addr.indexOf(pref)===0){ return esc(addr); }
+  // 住所が市区町村から始まっていれば、県名だけ前に付ける
+  if(city && addr.indexOf(city)===0){ return esc(pref+addr); }
+  // それ以外（FS店：町名から始まる）は 県＋市区町村＋住所 をつなげる
+  return esc(pref+city+addr);
+}
 function infoHTML(s){
   var c=CATS[s.cat]||{color:'#888'};
-  var region=s.address ? esc(s.address) : esc([s.pref,s.city].filter(Boolean).join(' '));
+  var region=buildAddress(s);
   var rows='';
   function line(html){ rows+='<div class="iw-meta">'+html+'</div>'; }
   if(s.group==='FS'){
